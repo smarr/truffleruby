@@ -1,21 +1,18 @@
 class MicroDispatch2 < Benchmark
   def benchmark
-    i = 1
     cnt = 0
     
-    while i <= 20000
-      cnt = cnt + method(i, i)
-      
-      i += 1
+    while cnt < 20000
+      cnt = cnt + method(1, 1)
     end
     cnt
   end
 
-  def method(a, argument)
-    argument
+  def method(a, b)
+    1
   end
 
   def verify_result(result)
-    200010000 == result
+    20000 == result
   end
 end
