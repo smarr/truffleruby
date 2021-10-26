@@ -1,10 +1,14 @@
 class MicroDispatchBase < Benchmark
   def benchmark
+    i = 1
     cnt = 0
     
-    for i in 1..20000 do
+    while i <= 20000
       cnt = cnt + 1
+      
+      i += 1
     end
+
     cnt
   end
 
