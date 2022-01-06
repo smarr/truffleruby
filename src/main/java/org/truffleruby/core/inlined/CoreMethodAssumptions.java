@@ -75,6 +75,7 @@ public class CoreMethodAssumptions {
 
     final Assumption integerCaseEqualAssumption;
     final Assumption integerEqualAssumption, floatEqualAssumption;
+    final Assumption integerNotEqualAssumption, floatNotEqualAssumption;
     final Assumption integerLessThanAssumption, floatLessThanAssumption;
     final Assumption integerLessOrEqualAssumption, floatLessOrEqualAssumption;
     final Assumption integerGreaterThanAssumption, floatGreaterThanAssumption;
@@ -120,6 +121,8 @@ public class CoreMethodAssumptions {
 
         integerEqualAssumption = registerAssumption((cl) -> cl.integerClass, "Integer", "==");
         floatEqualAssumption = registerAssumption((cl) -> cl.floatClass, "Float", "==");
+        integerNotEqualAssumption = registerAssumption((cl) -> cl.integerClass, "Integer", "!=");
+        floatNotEqualAssumption = registerAssumption((cl) -> cl.floatClass, "Float", "!=");
         integerLessThanAssumption = registerAssumption((cl) -> cl.integerClass, "Integer", "<");
         floatLessThanAssumption = registerAssumption((cl) -> cl.floatClass, "Float", "<");
         integerLessOrEqualAssumption = registerAssumption((cl) -> cl.integerClass, "Integer", "<=");
@@ -228,6 +231,8 @@ public class CoreMethodAssumptions {
                     return InlinedBitOrNodeGen.create(language, callParameters, self, args[0]);
                 case "==":
                     return InlinedEqualNodeGen.create(language, callParameters, self, args[0]);
+                case "!=":
+                    return InlinedNotEqualNodeGen.create(language, callParameters, self, args[0]);
                 case "===":
                     return InlinedCaseEqualNodeGen.create(language, callParameters, self, args[0]);
                 case "<":
