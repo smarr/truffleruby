@@ -38,6 +38,7 @@ import org.truffleruby.language.control.SequenceNode;
 import org.truffleruby.language.locals.FlipFlopStateNode;
 import org.truffleruby.language.locals.LocalVariableType;
 import org.truffleruby.language.locals.ReadLocalVariableNode;
+import org.truffleruby.language.locals.ReadLocalVariableNodeGen;
 import org.truffleruby.language.locals.WriteLocalVariableNode;
 import org.truffleruby.language.methods.Arity;
 import org.truffleruby.language.methods.BlockDefinitionNode;
@@ -227,7 +228,8 @@ public class MethodTranslator extends BodyTranslator {
                             writeArrayNode,
                             new NotNode(
                                     new IsNilNode(
-                                            new ReadLocalVariableNode(LocalVariableType.FRAME_LOCAL, arraySlot)))));
+                                            ReadLocalVariableNodeGen.create(
+                                                    LocalVariableType.FRAME_LOCAL, arraySlot)))));
 
             final RubyNode shouldDestructureAndArrayWasNotNil = new AndNode(
                     new ShouldDestructureNode(),

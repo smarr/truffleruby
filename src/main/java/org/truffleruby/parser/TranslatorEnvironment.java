@@ -24,6 +24,7 @@ import org.truffleruby.language.locals.LocalVariableType;
 import org.truffleruby.language.locals.ReadDeclarationVariableNode;
 import org.truffleruby.language.locals.ReadLocalNode;
 import org.truffleruby.language.locals.ReadLocalVariableNode;
+import org.truffleruby.language.locals.ReadLocalVariableNodeGen;
 import org.truffleruby.language.methods.SharedMethodInfo;
 
 import com.oracle.truffle.api.frame.FrameDescriptor;
@@ -156,7 +157,7 @@ public class TranslatorEnvironment {
             if (slot != null) {
                 final ReadLocalNode node;
                 if (level == 0) {
-                    node = new ReadLocalVariableNode(LocalVariableType.FRAME_LOCAL, slot);
+                    node = ReadLocalVariableNodeGen.create(LocalVariableType.FRAME_LOCAL, slot);
                 } else {
                     node = new ReadDeclarationVariableNode(LocalVariableType.FRAME_LOCAL, level, slot);
                 }

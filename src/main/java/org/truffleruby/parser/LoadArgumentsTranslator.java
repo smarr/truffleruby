@@ -42,6 +42,7 @@ import org.truffleruby.language.control.IfNode;
 import org.truffleruby.language.literal.NilLiteralNode;
 import org.truffleruby.language.locals.LocalVariableType;
 import org.truffleruby.language.locals.ReadLocalVariableNode;
+import org.truffleruby.language.locals.ReadLocalVariableNodeGen;
 import org.truffleruby.language.locals.WriteLocalVariableNode;
 import org.truffleruby.parser.ast.ArgsParseNode;
 import org.truffleruby.parser.ast.ArgumentParseNode;
@@ -411,7 +412,7 @@ public class LoadArgumentsTranslator extends Translator {
                     // Just consider the circular case for now as that's all that's speced
 
                     if (calledName.equals(name)) {
-                        defaultValue = new ReadLocalVariableNode(LocalVariableType.FRAME_LOCAL, slot);
+                        defaultValue = ReadLocalVariableNodeGen.create(LocalVariableType.FRAME_LOCAL, slot);
                         defaultValue.unsafeSetSourceSection(sourceSection);
                     } else {
                         defaultValue = valueNode.accept(this);
@@ -603,12 +604,12 @@ public class LoadArgumentsTranslator extends Translator {
                         true,
                         readArgument(sourceSection))),
                 new IfElseNode(
-                        new IsNilNode(new ReadLocalVariableNode(LocalVariableType.FRAME_LOCAL, arraySlot)),
+                        new IsNilNode(ReadLocalVariableNodeGen.create(LocalVariableType.FRAME_LOCAL, arraySlot)),
                         nil,
                         new IfElseNode(
                                 new ArrayIsAtLeastAsLargeAsNode(
                                         node.getPreCount() + node.getPostCount(),
-                                        new ReadLocalVariableNode(LocalVariableType.FRAME_LOCAL, arraySlot)),
+                                        ReadLocalVariableNodeGen.create(LocalVariableType.FRAME_LOCAL, arraySlot)),
                                 notNilAtLeastAsLarge,
                                 notNilSmaller))));
     }
@@ -632,7 +633,7 @@ public class LoadArgumentsTranslator extends Translator {
     }
 
     protected RubyNode loadArray(SourceIndexLength sourceSection) {
-        final RubyNode node = new ReadLocalVariableNode(
+        final RubyNode node = ReadLocalVariableNodeGen.create(
                 LocalVariableType.FRAME_LOCAL,
                 arraySlotStack.peek().getArraySlot());
         node.unsafeSetSourceSection(sourceSection);

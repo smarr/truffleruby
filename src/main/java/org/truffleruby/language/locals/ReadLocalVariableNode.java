@@ -11,29 +11,49 @@ package org.truffleruby.language.locals;
 
 import org.truffleruby.language.RubyNode;
 
-import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.frame.FrameUtil;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
-public class ReadLocalVariableNode extends ReadLocalNode {
+@SuppressWarnings("deprecation")
+public abstract class ReadLocalVariableNode extends ReadLocalNode {
 
-    public ReadLocalVariableNode(LocalVariableType type, FrameSlot frameSlot) {
+    protected ReadLocalVariableNode(LocalVariableType type, FrameSlot frameSlot) {
         super(frameSlot, type);
     }
 
     @Override
-    public Object execute(VirtualFrame frame) {
-        return readFrameSlot(frame);
-    }
+    public abstract Object execute(VirtualFrame frame);
 
     @Override
     protected Object readFrameSlot(VirtualFrame frame) {
-        if (readFrameSlotNode == null) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            readFrameSlotNode = insert(ReadFrameSlotNodeGen.create(frameSlot));
-        }
+        return execute(frame);
+    }
 
-        return readFrameSlotNode.executeRead(frame);
+    @Specialization(guards = "frame.isBoolean(frameSlot)")
+    protected boolean readBoolean(VirtualFrame frame) {
+        return FrameUtil.getBooleanSafe(frame, frameSlot);
+    }
+
+    @Specialization(guards = "frame.isInt(frameSlot)")
+    protected int readInt(VirtualFrame frame) {
+        return FrameUtil.getIntSafe(frame, frameSlot);
+    }
+
+    @Specialization(guards = "frame.isLong(frameSlot)")
+    protected long readLong(VirtualFrame frame) {
+        return FrameUtil.getLongSafe(frame, frameSlot);
+    }
+
+    @Specialization(guards = "frame.isDouble(frameSlot)")
+    protected double readDouble(VirtualFrame frame) {
+        return FrameUtil.getDoubleSafe(frame, frameSlot);
+    }
+
+    @Specialization(guards = "frame.isObject(frameSlot)")
+    protected Object readObject(VirtualFrame frame) {
+        return FrameUtil.getObjectSafe(frame, frameSlot);
     }
 
     @Override
