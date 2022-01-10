@@ -138,7 +138,7 @@ public abstract class Translator extends AbstractNodeVisitor<RubyNode> {
 
     public static RubyNode loadSelf(RubyLanguage language, TranslatorEnvironment environment) {
         final FrameSlot slot = environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
-        return new WriteLocalVariableNode(slot, profileArgument(language, new ReadSelfNode()));
+        return new WriteLocalVariableNode(slot, new ReadSelfNode());
     }
 
     public static RubyNode profileArgument(RubyLanguage language, RubyNode argumentNode) {
