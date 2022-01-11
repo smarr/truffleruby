@@ -9,39 +9,54 @@
  */
 package org.truffleruby.language.objects;
 
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.FrameUtil;
 import org.truffleruby.RubyContext;
 import org.truffleruby.RubyLanguage;
 import org.truffleruby.core.string.FrozenStrings;
 import org.truffleruby.language.RubyContextSourceNode;
-import org.truffleruby.language.locals.ReadFrameSlotNode;
-import org.truffleruby.language.locals.ReadFrameSlotNodeGen;
 
-import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.HiddenKey;
 
-public class SelfNode extends RubyContextSourceNode {
+public abstract class SelfNode extends RubyContextSourceNode {
 
     public static final HiddenKey SELF_IDENTIFIER = new HiddenKey("(self)");
 
-    private final FrameSlot selfSlot;
-
-    @Child private ReadFrameSlotNode readSelfSlotNode;
+    protected final FrameSlot selfSlot;
 
     public SelfNode(FrameDescriptor frameDescriptor) {
         this.selfSlot = frameDescriptor.findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
     }
 
     @Override
-    public Object execute(VirtualFrame frame) {
-        if (readSelfSlotNode == null) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            readSelfSlotNode = insert(ReadFrameSlotNodeGen.create(selfSlot));
-        }
+    public abstract Object execute(VirtualFrame frame);
 
-        return readSelfSlotNode.executeRead(frame);
+    @Specialization(guards = "frame.isBoolean(selfSlot)")
+    protected boolean readBoolean(VirtualFrame frame) {
+        return FrameUtil.getBooleanSafe(frame, selfSlot);
+    }
+
+    @Specialization(guards = "frame.isInt(selfSlot)")
+    protected int readInt(VirtualFrame frame) {
+        return FrameUtil.getIntSafe(frame, selfSlot);
+    }
+
+    @Specialization(guards = "frame.isLong(selfSlot)")
+    protected long readLong(VirtualFrame frame) {
+        return FrameUtil.getLongSafe(frame, selfSlot);
+    }
+
+    @Specialization(guards = "frame.isDouble(selfSlot)")
+    protected double readDouble(VirtualFrame frame) {
+        return FrameUtil.getDoubleSafe(frame, selfSlot);
+    }
+
+    @Specialization(guards = "frame.isObject(selfSlot)")
+    protected Object readObject(VirtualFrame frame) {
+        return FrameUtil.getObjectSafe(frame, selfSlot);
     }
 
     @Override

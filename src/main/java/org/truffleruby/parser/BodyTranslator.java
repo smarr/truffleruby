@@ -146,6 +146,7 @@ import org.truffleruby.language.objects.classvariables.ReadClassVariableNode;
 import org.truffleruby.language.objects.ReadInstanceVariableNode;
 import org.truffleruby.language.objects.RunModuleDefinitionNode;
 import org.truffleruby.language.objects.SelfNode;
+import org.truffleruby.language.objects.SelfNodeGen;
 import org.truffleruby.language.objects.SingletonClassNode;
 import org.truffleruby.language.objects.SingletonClassNodeGen;
 import org.truffleruby.language.objects.classvariables.WriteClassVariableNode;
@@ -1919,7 +1920,7 @@ public class BodyTranslator extends Translator {
             rhs = node.getValueNode().accept(this);
         }
 
-        final RubyNode self = new SelfNode(environment.getFrameDescriptor());
+        final RubyNode self = SelfNodeGen.create(environment.getFrameDescriptor());
         final RubyNode ret = new WriteInstanceVariableNode(name, self, rhs);
         ret.unsafeSetSourceSection(sourceSection);
         return addNewlineIfNeeded(node, ret);
@@ -1931,7 +1932,7 @@ public class BodyTranslator extends Translator {
         final String name = node.getName();
 
         // About every case will use a SelfParseNode, just don't it use more than once.
-        final SelfNode self = new SelfNode(environment.getFrameDescriptor());
+        final SelfNode self = SelfNodeGen.create(environment.getFrameDescriptor());
 
         final RubyNode ret = new ReadInstanceVariableNode(name, self);
         ret.unsafeSetSourceSection(sourceSection);
@@ -2835,7 +2836,7 @@ public class BodyTranslator extends Translator {
 
     @Override
     public RubyNode visitSelfNode(SelfParseNode node) {
-        final RubyNode ret = new SelfNode(environment.getFrameDescriptor());
+        final RubyNode ret = SelfNodeGen.create(environment.getFrameDescriptor());
         return addNewlineIfNeeded(node, ret);
     }
 
