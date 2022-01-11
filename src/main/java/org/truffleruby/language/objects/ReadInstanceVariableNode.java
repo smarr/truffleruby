@@ -9,35 +9,42 @@
  */
 package org.truffleruby.language.objects;
 
+import com.oracle.truffle.api.dsl.Fallback;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.FrameDescriptor;
+import com.oracle.truffle.api.frame.FrameSlot;
+import com.oracle.truffle.api.frame.FrameUtil;
 import org.truffleruby.RubyContext;
 import org.truffleruby.RubyLanguage;
 import org.truffleruby.core.string.FrozenStrings;
 import org.truffleruby.language.RubyContextSourceNode;
 import org.truffleruby.language.RubyDynamicObject;
-import org.truffleruby.language.RubyNode;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObjectLibrary;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 
-public class ReadInstanceVariableNode extends RubyContextSourceNode {
+public abstract class ReadInstanceVariableNode extends RubyContextSourceNode {
 
     private final String name;
+    protected final FrameSlot selfSlot;
 
-    @Child private RubyNode receiver;
     @Child private DynamicObjectLibrary objectLibrary;
 
     private final ConditionProfile objectProfile = ConditionProfile.create();
 
-    public ReadInstanceVariableNode(String name, RubyNode receiver) {
+    public ReadInstanceVariableNode(String name, FrameDescriptor frameDescriptor) {
         this.name = name;
-        this.receiver = receiver;
+        this.selfSlot = frameDescriptor.findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
     }
 
     @Override
-    public Object execute(VirtualFrame frame) {
-        final Object receiverObject = receiver.execute(frame);
+    public abstract Object execute(VirtualFrame frame);
+
+    @Specialization(guards = "frame.isObject(selfSlot)")
+    protected Object readObject(VirtualFrame frame) {
+        final Object receiverObject = FrameUtil.getObjectSafe(frame, selfSlot);
 
         if (objectProfile.profile(receiverObject instanceof RubyDynamicObject)) {
             final DynamicObjectLibrary objectLibrary = getObjectLibrary();
@@ -48,9 +55,14 @@ public class ReadInstanceVariableNode extends RubyContextSourceNode {
         }
     }
 
+    @Fallback
+    protected Object readNotObject(VirtualFrame frame) {
+        return nil;
+    }
+
     @Override
     public Object isDefined(VirtualFrame frame, RubyLanguage language, RubyContext context) {
-        final Object receiverObject = receiver.execute(frame);
+        final Object receiverObject = frame.getValue(selfSlot);
 
         if (objectProfile.profile(receiverObject instanceof RubyDynamicObject)) {
             final DynamicObjectLibrary objectLibrary = getObjectLibrary();
