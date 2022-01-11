@@ -143,7 +143,7 @@ import org.truffleruby.language.objects.GetDynamicLexicalScopeNode;
 import org.truffleruby.language.objects.InsideModuleDefinitionNode;
 import org.truffleruby.language.objects.LexicalScopeNode;
 import org.truffleruby.language.objects.classvariables.ReadClassVariableNode;
-import org.truffleruby.language.objects.ReadInstanceVariableNodeGen;
+import org.truffleruby.language.objects.ReadInstanceVariableNode;
 import org.truffleruby.language.objects.RunModuleDefinitionNode;
 import org.truffleruby.language.objects.SelfNodeGen;
 import org.truffleruby.language.objects.SingletonClassNode;
@@ -1930,7 +1930,7 @@ public class BodyTranslator extends Translator {
         final SourceIndexLength sourceSection = node.getPosition();
         final String name = node.getName();
 
-        final RubyNode ret = ReadInstanceVariableNodeGen.create(name, environment.getFrameDescriptor());
+        final RubyNode ret = new ReadInstanceVariableNode(name, environment.getFrameDescriptor());
         ret.unsafeSetSourceSection(sourceSection);
         return addNewlineIfNeeded(node, ret);
     }

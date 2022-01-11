@@ -21,50 +21,92 @@ import org.truffleruby.language.RubyContextSourceNode;
 import org.truffleruby.language.RubyDynamicObject;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.object.DynamicObjectLibrary;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 
-public abstract class ReadInstanceVariableNode extends RubyContextSourceNode {
+public final class ReadInstanceVariableNode extends RubyContextSourceNode {
 
     private final String name;
     protected final FrameSlot selfSlot;
 
-    @Child private DynamicObjectLibrary objectLibrary;
+    /**
+     * 0: uninitalized
+     * 1: slot is object and object is RubyDynamicObject
+     * 2: return nil
+     * 3: fallback
+     */
+    @CompilationFinal private byte state;
 
-    private final ConditionProfile objectProfile = ConditionProfile.create();
+    @Child private DynamicObjectLibrary objectLibrary;
 
     public ReadInstanceVariableNode(String name, FrameDescriptor frameDescriptor) {
         this.name = name;
         this.selfSlot = frameDescriptor.findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
+        state = 0;
     }
 
     @Override
-    public abstract Object execute(VirtualFrame frame);
+    public Object execute(VirtualFrame frame) {
+        boolean slotIsObject = frame.isObject(selfSlot);
+        if (slotIsObject) {
+            if (state == 1) {
+                Object receiverObject = FrameUtil.getObjectSafe(frame, selfSlot);
+                if (receiverObject instanceof RubyDynamicObject) {
+                    final DynamicObjectLibrary objectLibrary = getObjectLibrary();
+                    final RubyDynamicObject dynamicObject = (RubyDynamicObject) receiverObject;
+                    return objectLibrary.getOrDefault(dynamicObject, name, nil);
+                }
+            }
+        }
 
-    @Specialization(guards = "frame.isObject(selfSlot)")
-    protected Object readObject(VirtualFrame frame) {
-        final Object receiverObject = FrameUtil.getObjectSafe(frame, selfSlot);
-
-        if (objectProfile.profile(receiverObject instanceof RubyDynamicObject)) {
-            final DynamicObjectLibrary objectLibrary = getObjectLibrary();
-            final RubyDynamicObject dynamicObject = (RubyDynamicObject) receiverObject;
-            return objectLibrary.getOrDefault(dynamicObject, name, nil);
-        } else {
+        if (state == 2) {
             return nil;
         }
+
+        if (state == 3) {
+            return fallback(frame, slotIsObject);
+        }
+
+        CompilerDirectives.transferToInterpreterAndInvalidate();
+        return executeAndSpecialize(frame, slotIsObject);
     }
 
-    @Fallback
-    protected Object readNotObject(VirtualFrame frame) {
+    private Object fallback(VirtualFrame frame, boolean slotIsObject) {
+        if (slotIsObject) {
+            Object receiverObject = FrameUtil.getObjectSafe(frame, selfSlot);
+            if (receiverObject instanceof RubyDynamicObject) {
+                final DynamicObjectLibrary objectLibrary = getObjectLibrary();
+                final RubyDynamicObject dynamicObject = (RubyDynamicObject) receiverObject;
+                return objectLibrary.getOrDefault(dynamicObject, name, nil);
+            }
+        }
         return nil;
+    }
+
+    private Object executeAndSpecialize(VirtualFrame frame, boolean slotIsObject) {
+        if (slotIsObject) {
+            Object receiverObject = FrameUtil.getObjectSafe(frame, selfSlot);
+            if (receiverObject instanceof RubyDynamicObject) {
+                final DynamicObjectLibrary objectLibrary = getObjectLibrary();
+                final RubyDynamicObject dynamicObject = (RubyDynamicObject) receiverObject;
+                state = 1;
+                return objectLibrary.getOrDefault(dynamicObject, name, nil);
+            }
+            state = 3;
+            return nil;
+         } else {
+            state = 2;
+            return nil;
+        }
     }
 
     @Override
     public Object isDefined(VirtualFrame frame, RubyLanguage language, RubyContext context) {
         final Object receiverObject = frame.getValue(selfSlot);
 
-        if (objectProfile.profile(receiverObject instanceof RubyDynamicObject)) {
+        if (receiverObject instanceof RubyDynamicObject) {
             final DynamicObjectLibrary objectLibrary = getObjectLibrary();
             final RubyDynamicObject dynamicObject = (RubyDynamicObject) receiverObject;
             if (objectLibrary.containsKey(dynamicObject, name)) {
