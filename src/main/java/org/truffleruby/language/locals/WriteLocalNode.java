@@ -15,7 +15,6 @@ import org.truffleruby.core.array.AssignableNode;
 import org.truffleruby.core.string.FrozenStrings;
 import org.truffleruby.debug.SingleMemberDescriptor;
 import org.truffleruby.language.RubyContextSourceNode;
-import org.truffleruby.language.RubyNode;
 
 import com.oracle.truffle.api.frame.FrameSlot;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -26,11 +25,8 @@ public abstract class WriteLocalNode extends RubyContextSourceNode implements As
 
     protected final FrameSlot frameSlot;
 
-    @Child protected RubyNode valueNode;
-
-    public WriteLocalNode(FrameSlot frameSlot, RubyNode valueNode) {
+    public WriteLocalNode(FrameSlot frameSlot) {
         this.frameSlot = frameSlot;
-        this.valueNode = valueNode;
     }
 
     @Override

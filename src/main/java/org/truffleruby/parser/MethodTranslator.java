@@ -39,7 +39,7 @@ import org.truffleruby.language.locals.FlipFlopStateNode;
 import org.truffleruby.language.locals.LocalVariableType;
 import org.truffleruby.language.locals.ReadLocalVariableNode;
 import org.truffleruby.language.locals.ReadLocalVariableNodeGen;
-import org.truffleruby.language.locals.WriteLocalVariableNode;
+import org.truffleruby.language.locals.WriteLocalVariableNodeGen;
 import org.truffleruby.language.methods.Arity;
 import org.truffleruby.language.methods.BlockDefinitionNode;
 import org.truffleruby.language.methods.Split;
@@ -208,7 +208,7 @@ public class MethodTranslator extends BodyTranslator {
             castArrayNode.doNotCopy();
 
             final FrameSlot arraySlot = environment.declareVar(environment.allocateLocalTemp("destructure"));
-            final RubyNode writeArrayNode = new WriteLocalVariableNode(arraySlot, castArrayNode);
+            final RubyNode writeArrayNode = WriteLocalVariableNodeGen.create(arraySlot, castArrayNode);
 
             final LoadArgumentsTranslator destructureArgumentsTranslator = new LoadArgumentsTranslator(
                     currentNode,

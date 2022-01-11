@@ -65,7 +65,7 @@ import org.truffleruby.language.arguments.ReadPreArgumentNode;
 import org.truffleruby.language.arguments.RubyArguments;
 import org.truffleruby.language.control.RaiseException;
 import org.truffleruby.language.control.WhileNode;
-import org.truffleruby.language.locals.WriteLocalVariableNode;
+import org.truffleruby.language.locals.WriteLocalVariableNodeGen;
 import org.truffleruby.language.methods.Arity;
 import org.truffleruby.language.methods.CatchNextNode;
 import org.truffleruby.language.methods.CatchRetryAsErrorNode;
@@ -271,7 +271,7 @@ public class TranslatorDriver {
                                 language,
                                 new ReadPreArgumentNode(n, MissingArgumentBehavior.NIL));
                 final FrameSlot slot = environment.getFrameDescriptor().findFrameSlot(name);
-                sequence.add(new WriteLocalVariableNode(slot, readNode));
+                sequence.add(WriteLocalVariableNodeGen.create(slot, readNode));
             }
 
             sequence.add(truffleNode);

@@ -11,7 +11,7 @@ package org.truffleruby.parser;
 
 import org.truffleruby.language.RubyNode;
 import org.truffleruby.language.SourceIndexLength;
-import org.truffleruby.language.locals.WriteLocalVariableNode;
+import org.truffleruby.language.locals.WriteLocalVariableNodeGen;
 import org.truffleruby.parser.ast.LocalVarParseNode;
 import org.truffleruby.parser.ast.ParseNode;
 import org.truffleruby.parser.ast.SelfParseNode;
@@ -53,7 +53,7 @@ public interface ValueFromNode {
             return Translator.sequence(
                     sourceSection,
                     Arrays.asList(
-                            new WriteLocalVariableNode(
+                            WriteLocalVariableNodeGen.create(
                                     translator.getEnvironment().getFrameDescriptor().findOrAddFrameSlot(temp),
                                     node.accept(translator)),
                             subsequent));

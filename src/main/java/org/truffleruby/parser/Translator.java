@@ -21,7 +21,7 @@ import org.truffleruby.language.arguments.ProfileArgumentNodeGen;
 import org.truffleruby.language.arguments.ReadSelfNode;
 import org.truffleruby.language.control.SequenceNode;
 import org.truffleruby.language.literal.NilLiteralNode;
-import org.truffleruby.language.locals.WriteLocalVariableNode;
+import org.truffleruby.language.locals.WriteLocalVariableNodeGen;
 import org.truffleruby.language.objects.SelfNode;
 import org.truffleruby.parser.ast.NilImplicitParseNode;
 import org.truffleruby.parser.ast.ParseNode;
@@ -138,7 +138,7 @@ public abstract class Translator extends AbstractNodeVisitor<RubyNode> {
 
     public static RubyNode loadSelf(RubyLanguage language, TranslatorEnvironment environment) {
         final FrameSlot slot = environment.getFrameDescriptor().findOrAddFrameSlot(SelfNode.SELF_IDENTIFIER);
-        return new WriteLocalVariableNode(slot, new ReadSelfNode());
+        return WriteLocalVariableNodeGen.create(slot, new ReadSelfNode());
     }
 
     public static RubyNode profileArgument(RubyLanguage language, RubyNode argumentNode) {

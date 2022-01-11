@@ -58,7 +58,7 @@ public abstract class ReadLocalVariableNode extends ReadLocalNode {
 
     @Override
     public WriteLocalNode makeWriteNode(RubyNode rhs) {
-        return new WriteLocalVariableNode(frameSlot, rhs);
+        return WriteLocalVariableNodeGen.create(frameSlot, rhs);
     }
 
 }

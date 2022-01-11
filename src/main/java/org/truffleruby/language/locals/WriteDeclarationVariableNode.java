@@ -22,11 +22,13 @@ public class WriteDeclarationVariableNode extends WriteLocalNode {
 
     private final int frameDepth;
 
+    @Child protected RubyNode valueNode;
     @Child private WriteFrameSlotNode writeFrameSlotNode;
 
     public WriteDeclarationVariableNode(FrameSlot frameSlot, int frameDepth, RubyNode valueNode) {
-        super(frameSlot, valueNode);
+        super(frameSlot);
         this.frameDepth = frameDepth;
+        this.valueNode = valueNode;
     }
 
     @Override
