@@ -9,8 +9,13 @@
  */
 package org.truffleruby.language.constants;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.truffleruby.RubyContext;
 import org.truffleruby.RubyLanguage;
+import org.truffleruby.core.module.ConstantLookupResult;
 import org.truffleruby.core.module.ModuleOperations;
 import org.truffleruby.core.module.RubyModule;
 import org.truffleruby.core.string.FrozenStrings;
@@ -22,30 +27,64 @@ import org.truffleruby.language.control.RaiseException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 /** Read a constant using the current lexical scope: CONST */
-public class ReadConstantWithLexicalScopeNode extends RubyContextSourceNode {
+public abstract class ReadConstantWithLexicalScopeNode extends RubyContextSourceNode {
 
     private final LexicalScope lexicalScope;
     private final String name;
 
     @Child private LookupConstantWithLexicalScopeNode lookupConstantNode;
-    @Child private GetConstantNode getConstantNode = GetConstantNode.create();
+    @Child private GetConstantNode getConstantNode;
 
     public ReadConstantWithLexicalScopeNode(LexicalScope lexicalScope, String name) {
         this.lexicalScope = lexicalScope;
         this.name = name;
-        this.lookupConstantNode = LookupConstantWithLexicalScopeNodeGen.create(lexicalScope, name);
     }
 
-    @Override
-    public Object execute(VirtualFrame frame) {
+    @Specialization(assumptions = "constant.getAssumptions()", guards = "constantValue != null")
+    protected Object perfectConstant(
+            @Cached("doLookup()") ConstantLookupResult constant,
+            @Cached("getPerfectValue(constant)") Object constantValue) {
+        return constantValue;
+    }
+
+    protected Object getPerfectValue(ConstantLookupResult constant) {
+        if (constant == null || constant.isDeprecated()) {
+            return null;
+        }
+        RubyConstant c = constant.getConstant();
+        if (c == null || !c.hasValue()) {
+            return null;
+        }
+        return c.getValue();
+    }
+
+    @Specialization
+    public Object notPerfect(VirtualFrame frame) {
         final RubyModule module = lexicalScope.getLiveModule();
-        return getConstantNode.lookupAndResolveConstant(lexicalScope, module, name, lookupConstantNode);
+        if (lookupConstantNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            lookupConstantNode = LookupConstantWithLexicalScopeNodeGen.create(lexicalScope, name);
+            getConstantNode = insert(GetConstantNode.create());
+        }
+
+        final RubyConstant constant = lookupConstantNode.lookupConstant(lexicalScope, module, name, true);
+        return getConstantNode.executeGetConstant(lexicalScope, module, name, constant, lookupConstantNode);
+    }
+
+    @CompilerDirectives.TruffleBoundary
+    protected ConstantLookupResult doLookup() {
+        return ModuleOperations.lookupConstantWithLexicalScope(getContext(), lexicalScope, name);
     }
 
     @Override
     public Object isDefined(VirtualFrame frame, RubyLanguage language, RubyContext context) {
         final RubyConstant constant;
         try {
+            if (lookupConstantNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                lookupConstantNode = LookupConstantWithLexicalScopeNodeGen.create(lexicalScope, name);
+                getConstantNode = insert(GetConstantNode.create());
+            }
             constant = lookupConstantNode.executeLookupConstant();
         } catch (RaiseException e) {
             if (e.getException().getLogicalClass() == coreLibrary().nameErrorClass) {
