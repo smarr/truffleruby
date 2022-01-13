@@ -13,24 +13,32 @@ import com.oracle.truffle.api.AssumptionGroup;
 import org.truffleruby.language.methods.InternalMethod;
 
 import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 
 public class MethodLookupResult {
 
     private final InternalMethod method;
-    private final AssumptionGroup assumption;
+    private final Assumption assumption;
 
     public MethodLookupResult(InternalMethod method, Assumption... assumptions) {
         this.method = method;
-        this.assumption = new AssumptionGroup(assumptions);
+        this.assumption = AssumptionGroup.create(assumptions);
+    }
+
+    protected MethodLookupResult(Assumption assumption, InternalMethod method) {
+        this.method = method;
+        this.assumption = assumption;
     }
 
     public MethodLookupResult withNoMethod() {
         if (method == null) {
             return this;
-        } else {
-            return new MethodLookupResult(null, assumption.getAssumptions());
         }
+
+        if (assumption instanceof AssumptionGroup) {
+            return new MethodLookupResult(null, ((AssumptionGroup) assumption).getAssumptions());
+        }
+
+        return new MethodLookupResult(assumption, null);
     }
 
     public boolean isDefined() {
@@ -41,7 +49,7 @@ public class MethodLookupResult {
         return method;
     }
 
-    public AssumptionGroup getAssumptions() {
+    public Assumption getAssumption() {
         return assumption;
     }
 

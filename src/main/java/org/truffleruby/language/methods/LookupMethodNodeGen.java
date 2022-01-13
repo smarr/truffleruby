@@ -1,6 +1,7 @@
 // CheckStyle: start generated
 package org.truffleruby.language.methods;
 
+import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.AssumptionGroup;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
@@ -92,7 +93,7 @@ public final class LookupMethodNodeGen extends LookupMethodNode {
                             // assert (arg0Value == s0_.cachedMetaClass_);
                             // assert (arg1Value == s0_.cachedName_);
                             // assert (arg2Value == s0_.cachedConfig_);
-                            AssumptionGroup assumption0 = (methodLookupResult__.getAssumptions());
+                            Assumption assumption0 = (methodLookupResult__.getAssumption());
                             if (assumption0.isValid()) {
                                 if (count0_ < (getCacheLimit())) {
                                     s0_ = new LookupMethodCachedData(lookupMethodCached_cache);
@@ -221,7 +222,7 @@ public final class LookupMethodNodeGen extends LookupMethodNode {
         @CompilationFinal String cachedName_;
         @CompilationFinal DispatchConfiguration cachedConfig_;
         @CompilationFinal MethodLookupResult methodLookupResult_;
-        @CompilationFinal AssumptionGroup assumption0_;
+        @CompilationFinal Assumption assumption0_;
 
         LookupMethodCachedData(LookupMethodCachedData next_) {
             this.next_ = next_;

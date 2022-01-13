@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
+import com.oracle.truffle.api.AssumptionGroup;
 import com.oracle.truffle.api.object.DynamicObjectLibrary;
 import org.truffleruby.RubyContext;
 import org.truffleruby.RubyLanguage;
@@ -457,9 +458,15 @@ public abstract class ModuleOperations {
                             ancestor,
                             name,
                             null);
-                    for (Assumption assumption : refinedMethod.getAssumptions().getAssumptions()) {
-                        assumptions.add(assumption);
+                    Assumption a = refinedMethod.getAssumption();
+                    if (a instanceof AssumptionGroup) {
+                        for (Assumption assumption : ((AssumptionGroup) a).getAssumptions()) {
+                            assumptions.add(assumption);
+                        }
+                    } else {
+                        assumptions.add(a);
                     }
+
                     if (refinedMethod.isDefined()) {
                         InternalMethod method = rememberUsedRefinements(refinedMethod.getMethod(), declarationContext);
                         return new MethodLookupResult(method, toArray(assumptions));
@@ -558,9 +565,15 @@ public abstract class ModuleOperations {
                             foundDeclaringModule,
                             null,
                             null);
-                    for (Assumption assumption : superMethodInRefinement.getAssumptions().getAssumptions()) {
-                        assumptions.add(assumption);
+                    Assumption a = superMethodInRefinement.getAssumption();
+                    if (a instanceof AssumptionGroup) {
+                        for (Assumption assumption : ((AssumptionGroup) a).getAssumptions()) {
+                            assumptions.add(assumption);
+                        }
+                    } else {
+                        assumptions.add(a);
                     }
+
                     if (superMethodInRefinement.isDefined()) {
                         InternalMethod method = superMethodInRefinement.getMethod();
                         return new MethodLookupResult(

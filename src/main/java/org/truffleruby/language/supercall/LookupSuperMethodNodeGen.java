@@ -76,7 +76,7 @@ public final class LookupSuperMethodNodeGen extends LookupSuperMethodNode {
                             RubyClass selfMetaClass__ = (metaClass(arg0Value));
                             if ((metaClass(arg0Value) == selfMetaClass__)) {
                                 MethodLookupResult superMethod__ = (doLookup(currentMethod__, selfMetaClass__));
-                                AssumptionGroup assumption0 = (superMethod__.getAssumptions());
+                                Assumption assumption0 = (superMethod__.getAssumption());
                                 if (assumption0.isValid()) {
                                     if (count0_ < (getCacheLimit())) {
                                         s0_ = new LookupSuperMethodCachedData(lookupSuperMethodCached_cache);
@@ -163,7 +163,7 @@ public final class LookupSuperMethodNodeGen extends LookupSuperMethodNode {
         @CompilationFinal InternalMethod currentMethod_;
         @CompilationFinal RubyClass selfMetaClass_;
         @CompilationFinal MethodLookupResult superMethod_;
-        @CompilationFinal AssumptionGroup assumption0_;
+        @CompilationFinal Assumption assumption0_;
 
         LookupSuperMethodCachedData(LookupSuperMethodCachedData next_) {
             this.next_ = next_;
