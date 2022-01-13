@@ -53,7 +53,7 @@ public abstract class InlinedNotEqualNode extends BinaryInlinedOperationNode {
             guards = {
                     "stringsSelf.isRubyString(self)",
                     "stringsB.isRubyString(b)",
-                    "lookupNode.lookupProtected(frame, self, METHOD).isUndefined()"
+                    //"lookupNode.lookupProtected(frame, self, METHOD).isUndefined()"
             },
             assumptions = "assumptions")
     protected boolean stringEqual(VirtualFrame frame, Object self, Object b,
