@@ -81,6 +81,8 @@ public class CoreMethodAssumptions {
     final Assumption integerGreaterThanAssumption, floatGreaterThanAssumption;
     final Assumption integerGreaterOrEqualAssumption, floatGreaterOrEqualAssumption;
 
+    final Assumption nilEqualAssumption;
+
     final Assumption nilClassIsNilAssumption;
 
     public final Assumption symbolToProcAssumption;
@@ -132,6 +134,7 @@ public class CoreMethodAssumptions {
         integerGreaterOrEqualAssumption = registerAssumption((cl) -> cl.integerClass, "Integer", ">=");
         floatGreaterOrEqualAssumption = registerAssumption((cl) -> cl.floatClass, "Float", ">=");
 
+        nilEqualAssumption = registerAssumption((cl) -> cl.stringClass, "Nil", "==");
         nilClassIsNilAssumption = registerAssumption((cl) -> cl.nilClass, "Nil", "nil?");
 
         symbolToProcAssumption = registerAssumption((cl) -> cl.symbolClass, "Symbol", "to_proc");

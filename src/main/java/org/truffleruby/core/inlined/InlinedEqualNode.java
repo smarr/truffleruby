@@ -14,6 +14,7 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.library.CachedLibrary;
 import org.truffleruby.RubyLanguage;
 import org.truffleruby.core.string.StringNodes;
+import org.truffleruby.language.Nil;
 import org.truffleruby.language.dispatch.RubyCallNodeParameters;
 
 import com.oracle.truffle.api.dsl.Specialization;
@@ -27,11 +28,13 @@ public abstract class InlinedEqualNode extends BinaryInlinedOperationNode {
 
     final Assumption integerEqualAssumption;
     final Assumption floatEqualAssumption;
+    final Assumption nilEqualAssumption;
 
     public InlinedEqualNode(RubyLanguage language, RubyCallNodeParameters callNodeParameters) {
         super(language, callNodeParameters);
         this.integerEqualAssumption = language.coreMethodAssumptions.integerEqualAssumption;
         this.floatEqualAssumption = language.coreMethodAssumptions.floatEqualAssumption;
+        this.nilEqualAssumption = language.coreMethodAssumptions.nilEqualAssumption;
     }
 
     @Specialization(assumptions = { "assumptions", "integerEqualAssumption" })
@@ -57,6 +60,11 @@ public abstract class InlinedEqualNode extends BinaryInlinedOperationNode {
     @Specialization(assumptions = { "assumptions", "floatEqualAssumption" })
     protected boolean doubleLong(double a, long b) {
         return a == b;
+    }
+
+    @Specialization(assumptions = { "assumptions", "nilEqualAssumption" })
+    protected boolean doubleLong(Nil a, Nil b) {
+        return true;
     }
 
     @Specialization(
