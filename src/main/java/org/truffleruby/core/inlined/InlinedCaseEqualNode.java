@@ -11,12 +11,16 @@ package org.truffleruby.core.inlined;
 
 import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.library.CachedLibrary;
 import org.truffleruby.RubyLanguage;
 import org.truffleruby.core.module.RubyModule;
+import org.truffleruby.core.string.StringNodes;
+import org.truffleruby.core.string.StringNodesFactory;
 import org.truffleruby.language.dispatch.RubyCallNodeParameters;
 
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
+import org.truffleruby.language.library.RubyStringLibrary;
 import org.truffleruby.language.methods.LookupMethodOnSelfNode;
 import org.truffleruby.language.objects.IsANode;
 
@@ -25,10 +29,12 @@ public abstract class InlinedCaseEqualNode extends BinaryInlinedOperationNode {
     protected static final String METHOD = "===";
 
     final Assumption integerCaseEqualAssumption;
+    final Assumption stringCaseEqualAssumption;
 
     public InlinedCaseEqualNode(RubyLanguage language, RubyCallNodeParameters callNodeParameters) {
         super(language, callNodeParameters);
         this.integerCaseEqualAssumption = language.coreMethodAssumptions.integerCaseEqualAssumption;
+        this.stringCaseEqualAssumption = language.coreMethodAssumptions.stringCaseEqualAssumption;
     }
 
     @Specialization(assumptions = { "assumptions", "integerCaseEqualAssumption" })
@@ -51,6 +57,20 @@ public abstract class InlinedCaseEqualNode extends BinaryInlinedOperationNode {
             @Cached LookupMethodOnSelfNode lookupNode,
             @Cached IsANode isANode) {
         return isANode.executeIsA(b, self);
+    }
+
+    protected static final StringNodes.EqualNode createEqualNode() {
+        return StringNodesFactory.EqualNodeFactory.create(null);
+    }
+
+    @Specialization(
+            assumptions = { "assumptions", "stringCaseEqualAssumption" },
+            guards = "libSelf.isRubyString(self)")
+    protected boolean stringEqual(VirtualFrame frame, Object self,
+                                  Object b,
+                                  @CachedLibrary(limit = "2") RubyStringLibrary libSelf,
+                                  @Cached("createEqualNode()") StringNodes.EqualNode equalNode) {
+        return equalNode.executeEvaluatedToBoolean(self, b);
     }
 
     @Specialization

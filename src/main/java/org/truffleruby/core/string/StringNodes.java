@@ -484,6 +484,8 @@ public abstract class StringNodes {
         @Child private DispatchNode objectEqualNode;
         @Child private BooleanCastNode booleanCastNode;
 
+        public abstract boolean executeEvaluatedToBoolean(Object a, Object b);
+
         @Specialization(guards = "libB.isRubyString(b)")
         protected boolean equalString(Object a, Object b,
                 @CachedLibrary(limit = "2") RubyStringLibrary libA,
