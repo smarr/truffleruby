@@ -457,7 +457,7 @@ public abstract class ModuleOperations {
                             ancestor,
                             name,
                             null);
-                    for (Assumption assumption : refinedMethod.getAssumptions()) {
+                    for (Assumption assumption : refinedMethod.getAssumptions().getAssumptions()) {
                         assumptions.add(assumption);
                     }
                     if (refinedMethod.isDefined()) {
@@ -558,7 +558,7 @@ public abstract class ModuleOperations {
                             foundDeclaringModule,
                             null,
                             null);
-                    for (Assumption assumption : superMethodInRefinement.getAssumptions()) {
+                    for (Assumption assumption : superMethodInRefinement.getAssumptions().getAssumptions()) {
                         assumptions.add(assumption);
                     }
                     if (superMethodInRefinement.isDefined()) {

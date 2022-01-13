@@ -30,8 +30,8 @@ import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
 
 /** Caches {@link ModuleOperations#lookupMethodCached(RubyModule, String, DeclarationContext)} on an actual instance. */
-@ReportPolymorphism
-@GenerateUncached
+//@ReportPolymorphism
+//@GenerateUncached
 public abstract class LookupMethodNode extends RubyBaseNode {
 
     public static LookupMethodNode create() {
@@ -40,15 +40,15 @@ public abstract class LookupMethodNode extends RubyBaseNode {
 
     public abstract InternalMethod execute(Frame frame, RubyClass metaClass, String name, DispatchConfiguration config);
 
-    @Specialization(
-            // no need to guard on the context, the metaClass is context-specific
-            guards = {
-                    "isSingleContext()",
-                    "metaClass == cachedMetaClass",
-                    "name == cachedName",
-                    "config == cachedConfig" },
-            assumptions = "methodLookupResult.getAssumptions()",
-            limit = "getCacheLimit()")
+//    @Specialization(
+//            // no need to guard on the context, the metaClass is context-specific
+//            guards = {
+//                    "isSingleContext()",
+//                    "metaClass == cachedMetaClass",
+//                    "name == cachedName",
+//                    "config == cachedConfig" },
+//            assumptions = "methodLookupResult.getAssumptions()",
+//            limit = "getCacheLimit()")
     protected InternalMethod lookupMethodCached(
             Frame frame, RubyClass metaClass, String name, DispatchConfiguration config,
             @Cached("metaClass") RubyClass cachedMetaClass,
@@ -59,7 +59,7 @@ public abstract class LookupMethodNode extends RubyBaseNode {
         return methodLookupResult.getMethod();
     }
 
-    @Specialization(replaces = "lookupMethodCached")
+//    @Specialization(replaces = "lookupMethodCached")
     protected InternalMethod lookupMethodUncached(
             Frame frame, RubyClass metaClass, String name, DispatchConfiguration config,
             @Cached MetaClassNode metaClassNode,

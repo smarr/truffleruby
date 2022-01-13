@@ -36,13 +36,13 @@ public abstract class LookupSuperMethodNode extends RubyBaseNode {
     // the current method's module are identical, which is non-trivial
     // if the current method's module is an (included) module and not a class.
 
-    @Specialization(
-            guards = {
-                    "isSingleContext()",
-                    "getCurrentMethod(frame) == currentMethod",
-                    "metaClass(self) == selfMetaClass" },
-            assumptions = "superMethod.getAssumptions()",
-            limit = "getCacheLimit()")
+//    @Specialization(
+//            guards = {
+//                    "isSingleContext()",
+//                    "getCurrentMethod(frame) == currentMethod",
+//                    "metaClass(self) == selfMetaClass" },
+//            assumptions = "superMethod.getAssumptions()",
+//            limit = "getCacheLimit()")
     protected InternalMethod lookupSuperMethodCached(VirtualFrame frame, Object self,
             @Cached("getCurrentMethod(frame)") InternalMethod currentMethod,
             @Cached("metaClass(self)") RubyClass selfMetaClass,
@@ -50,7 +50,7 @@ public abstract class LookupSuperMethodNode extends RubyBaseNode {
         return superMethod.getMethod();
     }
 
-    @Specialization
+//    @Specialization
     protected InternalMethod lookupSuperMethodUncached(VirtualFrame frame, Object self) {
         final InternalMethod currentMethod = getCurrentMethod(frame);
         final RubyClass selfMetaClass = metaClass(self);

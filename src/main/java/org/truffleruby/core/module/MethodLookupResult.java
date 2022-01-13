@@ -9,6 +9,7 @@
  */
 package org.truffleruby.core.module;
 
+import com.oracle.truffle.api.AssumptionGroup;
 import org.truffleruby.language.methods.InternalMethod;
 
 import com.oracle.truffle.api.Assumption;
@@ -17,18 +18,18 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 public class MethodLookupResult {
 
     private final InternalMethod method;
-    @CompilationFinal(dimensions = 1) private final Assumption[] assumptions;
+    private final AssumptionGroup assumption;
 
     public MethodLookupResult(InternalMethod method, Assumption... assumptions) {
         this.method = method;
-        this.assumptions = assumptions;
+        this.assumption = new AssumptionGroup(assumptions);
     }
 
     public MethodLookupResult withNoMethod() {
         if (method == null) {
             return this;
         } else {
-            return new MethodLookupResult(null, assumptions);
+            return new MethodLookupResult(null, assumption.getAssumptions());
         }
     }
 
@@ -40,8 +41,8 @@ public class MethodLookupResult {
         return method;
     }
 
-    public Assumption[] getAssumptions() {
-        return assumptions;
+    public AssumptionGroup getAssumptions() {
+        return assumption;
     }
 
 }
