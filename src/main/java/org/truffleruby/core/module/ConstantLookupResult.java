@@ -14,14 +14,13 @@ import org.truffleruby.language.LexicalScope;
 import org.truffleruby.language.RubyConstant;
 
 import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 
 public class ConstantLookupResult {
 
     private final RubyConstant constant;
-    @CompilationFinal(dimensions = 1) private final Assumption[] assumptions;
+    private final Assumption assumptions;
 
-    public ConstantLookupResult(RubyConstant constant, Assumption... assumptions) {
+    public ConstantLookupResult(RubyConstant constant, Assumption assumptions) {
         assert constant == null || !(constant.isAutoload() && constant.getAutoloadConstant().isAutoloadingThread());
         this.constant = constant;
         this.assumptions = assumptions;
@@ -47,7 +46,7 @@ public class ConstantLookupResult {
         return constant;
     }
 
-    public Assumption[] getAssumptions() {
+    public Assumption getAssumptions() {
         return assumptions;
     }
 

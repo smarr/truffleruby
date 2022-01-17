@@ -10,6 +10,7 @@
 package org.truffleruby.core.inlined;
 
 import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.AssumptionGroup;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.VirtualFrame;
@@ -27,7 +28,7 @@ public abstract class InlinedReplaceableNode extends RubyContextSourceNode {
 
     private final RubyCallNodeParameters parameters;
 
-    @CompilationFinal(dimensions = 1) protected final Assumption[] assumptions;
+    protected final Assumption assumptions;
 
     private RubyCallNode replacedBy = null;
 
@@ -37,10 +38,10 @@ public abstract class InlinedReplaceableNode extends RubyContextSourceNode {
             Assumption... assumptions) {
         this.parameters = callNodeParameters;
 
-        this.assumptions = new Assumption[1 + assumptions.length];
-        this.assumptions[0] = language.traceFuncUnusedAssumption.getAssumption();
-        ArrayUtils.arraycopy(assumptions, 0, this.assumptions, 1, assumptions.length);
-
+        Assumption[] assumptionArr = new Assumption[1 + assumptions.length];
+        assumptionArr[0] = language.traceFuncUnusedAssumption.getAssumption();
+        ArrayUtils.arraycopy(assumptions, 0, assumptionArr, 1, assumptions.length);
+        this.assumptions = AssumptionGroup.create(assumptionArr);
     }
 
     protected RubyCallNode rewriteToCallNode() {

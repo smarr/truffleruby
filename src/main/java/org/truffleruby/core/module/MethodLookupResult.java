@@ -9,17 +9,19 @@
  */
 package org.truffleruby.core.module;
 
+import com.oracle.truffle.api.AssumptionGroup;
 import org.truffleruby.language.methods.InternalMethod;
 
 import com.oracle.truffle.api.Assumption;
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
+
+import java.util.List;
 
 public class MethodLookupResult {
 
     private final InternalMethod method;
-    @CompilationFinal(dimensions = 1) private final Assumption[] assumptions;
+    private final Assumption assumptions;
 
-    public MethodLookupResult(InternalMethod method, Assumption... assumptions) {
+    public MethodLookupResult(InternalMethod method, Assumption assumptions) {
         this.method = method;
         this.assumptions = assumptions;
     }
@@ -36,11 +38,21 @@ public class MethodLookupResult {
         return method != null && !method.isUndefined();
     }
 
+    public void copyAssumptionsTo(List<Assumption> target) {
+        if (assumptions.getClass() == AssumptionGroup.class) {
+            for (Assumption a : ((AssumptionGroup) assumptions).getAssumptions()) {
+                target.add(a);
+            }
+        } else {
+            target.add(assumptions);
+        }
+    }
+
     public InternalMethod getMethod() {
         return method;
     }
 
-    public Assumption[] getAssumptions() {
+    public Assumption getAssumptions() {
         return assumptions;
     }
 

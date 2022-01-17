@@ -10,6 +10,7 @@
 package org.truffleruby.core.inlined;
 
 import com.oracle.truffle.api.Assumption;
+import com.oracle.truffle.api.AssumptionGroup;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.Frame;
@@ -23,7 +24,7 @@ import org.truffleruby.language.methods.LookupMethodOnSelfNode;
 
 public class InlinedDispatchNode extends RubyBaseNode implements DispatchingNode {
 
-    @CompilationFinal(dimensions = 1) private final Assumption[] assumptions;
+    private final Assumption assumptions;
 
     @Child private LookupMethodOnSelfNode lookupNode;
 
@@ -36,9 +37,10 @@ public class InlinedDispatchNode extends RubyBaseNode implements DispatchingNode
             InlinedMethodNode inlinedMethod,
             Assumption... assumptions) {
 
-        this.assumptions = new Assumption[1 + assumptions.length];
-        this.assumptions[0] = language.traceFuncUnusedAssumption.getAssumption();
-        ArrayUtils.arraycopy(assumptions, 0, this.assumptions, 1, assumptions.length);
+        Assumption[] assumptionArr = new Assumption[1 + assumptions.length];
+        assumptionArr[0] = language.traceFuncUnusedAssumption.getAssumption();
+        ArrayUtils.arraycopy(assumptions, 0, assumptionArr, 1, assumptions.length);
+        this.assumptions = AssumptionGroup.create(assumptionArr);
 
         lookupNode = LookupMethodOnSelfNode.create();
 

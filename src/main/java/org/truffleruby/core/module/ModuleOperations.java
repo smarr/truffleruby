@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
+import com.oracle.truffle.api.AssumptionGroup;
 import com.oracle.truffle.api.object.DynamicObjectLibrary;
 import org.truffleruby.RubyContext;
 import org.truffleruby.RubyLanguage;
@@ -155,7 +156,7 @@ public abstract class ModuleOperations {
         ConstantEntry constantEntry = fields.getOrComputeConstantEntry(name);
         assumptions.add(constantEntry.getAssumption());
         if (constantExists(constantEntry, assumptions)) {
-            return new ConstantLookupResult(constantEntry.getConstant(), toArray(assumptions));
+            return new ConstantLookupResult(constantEntry.getConstant(), toGroup(assumptions));
         }
 
         // Look in ancestors
@@ -167,12 +168,12 @@ public abstract class ModuleOperations {
             constantEntry = fields.getOrComputeConstantEntry(name);
             assumptions.add(constantEntry.getAssumption());
             if (constantExists(constantEntry, assumptions)) {
-                return new ConstantLookupResult(constantEntry.getConstant(), toArray(assumptions));
+                return new ConstantLookupResult(constantEntry.getConstant(), toGroup(assumptions));
             }
         }
 
         // Nothing found
-        return new ConstantLookupResult(null, toArray(assumptions));
+        return new ConstantLookupResult(null, toGroup(assumptions));
     }
 
     @TruffleBoundary
@@ -184,7 +185,7 @@ public abstract class ModuleOperations {
         ConstantEntry constantEntry = fields.getOrComputeConstantEntry(name);
         assumptions.add(constantEntry.getAssumption());
         if (constantExists(constantEntry, assumptions)) {
-            return new ConstantLookupResult(constantEntry.getConstant(), toArray(assumptions));
+            return new ConstantLookupResult(constantEntry.getConstant(), toGroup(assumptions));
         }
 
         for (RubyModule ancestor : objectClass.fields.prependedAndIncludedModules()) {
@@ -192,11 +193,11 @@ public abstract class ModuleOperations {
             constantEntry = fields.getOrComputeConstantEntry(name);
             assumptions.add(constantEntry.getAssumption());
             if (constantExists(constantEntry, assumptions)) {
-                return new ConstantLookupResult(constantEntry.getConstant(), toArray(assumptions));
+                return new ConstantLookupResult(constantEntry.getConstant(), toGroup(assumptions));
             }
         }
 
-        return new ConstantLookupResult(null, toArray(assumptions));
+        return new ConstantLookupResult(null, toGroup(assumptions));
     }
 
     @TruffleBoundary
@@ -248,7 +249,7 @@ public abstract class ModuleOperations {
             final ConstantEntry constantEntry = fields.getOrComputeConstantEntry(name);
             assumptions.add(constantEntry.getAssumption());
             if (constantExists(constantEntry, assumptions)) {
-                return new ConstantLookupResult(constantEntry.getConstant(), toArray(assumptions));
+                return new ConstantLookupResult(constantEntry.getConstant(), toGroup(assumptions));
             }
 
             lexicalScope = lexicalScope.getParent();
@@ -333,9 +334,9 @@ public abstract class ModuleOperations {
             final ConstantEntry constantEntry = fields.getOrComputeConstantEntry(name);
             assumptions.add(constantEntry.getAssumption());
             if (constantExists(constantEntry, assumptions)) {
-                return new ConstantLookupResult(constantEntry.getConstant(), toArray(assumptions));
+                return new ConstantLookupResult(constantEntry.getConstant(), toGroup(assumptions));
             } else {
-                return new ConstantLookupResult(null, toArray(assumptions));
+                return new ConstantLookupResult(null, toGroup(assumptions));
             }
         }
     }
@@ -440,7 +441,7 @@ public abstract class ModuleOperations {
         // Look in ancestors
         for (RubyModule ancestor : module.fields.ancestors()) {
             if (ancestor == lookupTo) {
-                return new MethodLookupResult(null, toArray(assumptions));
+                return new MethodLookupResult(null, toGroup(assumptions));
             }
             final RubyModule[] refinements = getRefinementsFor(declarationContext, ancestor);
 
@@ -457,12 +458,11 @@ public abstract class ModuleOperations {
                             ancestor,
                             name,
                             null);
-                    for (Assumption assumption : refinedMethod.getAssumptions()) {
-                        assumptions.add(assumption);
-                    }
+                    refinedMethod.copyAssumptionsTo(assumptions);
+
                     if (refinedMethod.isDefined()) {
                         InternalMethod method = rememberUsedRefinements(refinedMethod.getMethod(), declarationContext);
-                        return new MethodLookupResult(method, toArray(assumptions));
+                        return new MethodLookupResult(method, toGroup(assumptions));
                     }
                 }
             }
@@ -471,12 +471,12 @@ public abstract class ModuleOperations {
             final InternalMethod method = fields.getMethodAndAssumption(name, assumptions);
 
             if (method != null) {
-                return new MethodLookupResult(method, toArray(assumptions));
+                return new MethodLookupResult(method, toGroup(assumptions));
             }
         }
 
         // Nothing found
-        return new MethodLookupResult(null, toArray(assumptions));
+        return new MethodLookupResult(null, toGroup(assumptions));
     }
 
     public static InternalMethod lookupMethodUncached(RubyModule module, String name,
@@ -543,7 +543,7 @@ public abstract class ModuleOperations {
 
         for (RubyModule ancestor : objectMetaClass.fields.ancestors()) {
             if (ancestor == lookupTo) {
-                return new MethodLookupResult(null, toArray(assumptions));
+                return new MethodLookupResult(null, toGroup(assumptions));
             }
 
             final RubyModule[] refinements = getRefinementsFor(declarationContext, callerDeclaringContext, ancestor);
@@ -558,14 +558,13 @@ public abstract class ModuleOperations {
                             foundDeclaringModule,
                             null,
                             null);
-                    for (Assumption assumption : superMethodInRefinement.getAssumptions()) {
-                        assumptions.add(assumption);
-                    }
+                    superMethodInRefinement.copyAssumptionsTo(assumptions);
+
                     if (superMethodInRefinement.isDefined()) {
                         InternalMethod method = superMethodInRefinement.getMethod();
                         return new MethodLookupResult(
                                 rememberUsedRefinements(method, declarationContext, refinements, ancestor),
-                                toArray(assumptions));
+                                toGroup(assumptions));
                     }
                     if (foundDeclaringModule.get() && isRefinedMethod) {
                         // if method is defined in refinement module (R)
@@ -583,13 +582,13 @@ public abstract class ModuleOperations {
                 final ModuleFields fields = ancestor.fields;
                 final InternalMethod method = fields.getMethodAndAssumption(name, assumptions);
                 if (method != null) {
-                    return new MethodLookupResult(method, toArray(assumptions));
+                    return new MethodLookupResult(method, toGroup(assumptions));
                 }
             }
         }
 
         // Nothing found
-        return new MethodLookupResult(null, toArray(assumptions));
+        return new MethodLookupResult(null, toGroup(assumptions));
     }
 
     private static InternalMethod rememberUsedRefinements(InternalMethod method,
@@ -637,8 +636,8 @@ public abstract class ModuleOperations {
         return declarationContext.getRefinementsFor(module);
     }
 
-    private static Assumption[] toArray(ArrayList<Assumption> assumptions) {
-        return assumptions.toArray(EMPTY_ASSUMPTION_ARRAY);
+    private static Assumption toGroup(ArrayList<Assumption> assumptions) {
+        return AssumptionGroup.create(assumptions.toArray(EMPTY_ASSUMPTION_ARRAY));
     }
 
     @TruffleBoundary
