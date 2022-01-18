@@ -34,14 +34,42 @@ public abstract class InlinedReplaceableNode extends RubyContextSourceNode {
 
     protected InlinedReplaceableNode(
             RubyLanguage language,
+            RubyCallNodeParameters callNodeParameters) {
+        this.parameters = callNodeParameters;
+        this.assumptions = language.traceFuncUnusedAssumption.getAssumption();
+    }
+
+    protected InlinedReplaceableNode(
+            RubyLanguage language,
             RubyCallNodeParameters callNodeParameters,
-            Assumption... assumptions) {
+            Assumption assumption) {
+        this.parameters = callNodeParameters;
+        this.assumptions = AssumptionGroup.create(new Assumption[] {language.traceFuncUnusedAssumption.getAssumption(), assumption});
+    }
+
+    protected InlinedReplaceableNode(
+            RubyLanguage language,
+            RubyCallNodeParameters callNodeParameters,
+            Assumption assumption1,
+            Assumption assumption2) {
         this.parameters = callNodeParameters;
 
-        Assumption[] assumptionArr = new Assumption[1 + assumptions.length];
-        assumptionArr[0] = language.traceFuncUnusedAssumption.getAssumption();
-        ArrayUtils.arraycopy(assumptions, 0, assumptionArr, 1, assumptions.length);
-        this.assumptions = AssumptionGroup.create(assumptionArr);
+        this.assumptions = AssumptionGroup.create(new Assumption[] {
+                language.traceFuncUnusedAssumption.getAssumption(),
+                assumption1, assumption2});
+    }
+
+    protected InlinedReplaceableNode(
+            RubyLanguage language,
+            RubyCallNodeParameters callNodeParameters,
+            Assumption assumption1,
+            Assumption assumption2,
+            Assumption assumption3) {
+        this.parameters = callNodeParameters;
+
+        this.assumptions = AssumptionGroup.create(new Assumption[] {
+                language.traceFuncUnusedAssumption.getAssumption(),
+                assumption1, assumption2, assumption3});
     }
 
     protected RubyCallNode rewriteToCallNode() {

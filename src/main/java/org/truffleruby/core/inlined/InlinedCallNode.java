@@ -32,9 +32,8 @@ public class InlinedCallNode extends InlinedReplaceableNode {
     public InlinedCallNode(
             RubyLanguage language,
             InlinedMethodNode inlinedMethod,
-            RubyCallNodeParameters parameters,
-            Assumption... assumptions) {
-        super(language, parameters, assumptions);
+            RubyCallNodeParameters parameters) {
+        super(language, parameters);
 
         this.methodName = parameters.getMethodName();
         this.receiver = parameters.getReceiver();

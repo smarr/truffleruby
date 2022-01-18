@@ -21,9 +21,22 @@ public abstract class UnaryInlinedOperationNode extends InlinedOperationNode {
 
     public UnaryInlinedOperationNode(
             RubyLanguage language,
+            RubyCallNodeParameters callNodeParameters) {
+        super(language, callNodeParameters);
+    }
+
+    public UnaryInlinedOperationNode(
+            RubyLanguage language,
             RubyCallNodeParameters callNodeParameters,
-            Assumption... assumptions) {
-        super(language, callNodeParameters, assumptions);
+            Assumption assumption) {
+        super(language, callNodeParameters, assumption);
+    }
+
+    public UnaryInlinedOperationNode(
+            RubyLanguage language,
+            RubyCallNodeParameters callNodeParameters,
+            Assumption assumption1, Assumption assumption2) {
+        super(language, callNodeParameters, assumption1, assumption2);
     }
 
     protected abstract RubyNode getSelf();

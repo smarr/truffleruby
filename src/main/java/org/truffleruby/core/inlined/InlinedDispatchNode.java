@@ -34,13 +34,8 @@ public class InlinedDispatchNode extends RubyBaseNode implements DispatchingNode
 
     public InlinedDispatchNode(
             RubyLanguage language,
-            InlinedMethodNode inlinedMethod,
-            Assumption... assumptions) {
-
-        Assumption[] assumptionArr = new Assumption[1 + assumptions.length];
-        assumptionArr[0] = language.traceFuncUnusedAssumption.getAssumption();
-        ArrayUtils.arraycopy(assumptions, 0, assumptionArr, 1, assumptions.length);
-        this.assumptions = AssumptionGroup.create(assumptionArr);
+            InlinedMethodNode inlinedMethod) {
+        this.assumptions = language.traceFuncUnusedAssumption.getAssumption();
 
         lookupNode = LookupMethodOnSelfNode.create();
 

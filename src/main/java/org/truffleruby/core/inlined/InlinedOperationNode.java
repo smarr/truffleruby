@@ -22,9 +22,29 @@ public abstract class InlinedOperationNode extends InlinedReplaceableNode {
 
     public InlinedOperationNode(
             RubyLanguage language,
+            RubyCallNodeParameters callNodeParameters) {
+        super(language, callNodeParameters);
+    }
+
+    public InlinedOperationNode(
+            RubyLanguage language,
             RubyCallNodeParameters callNodeParameters,
-            Assumption... assumptions) {
-        super(language, callNodeParameters, assumptions);
+            Assumption assumption) {
+        super(language, callNodeParameters, assumption);
+    }
+
+    public InlinedOperationNode(
+            RubyLanguage language,
+            RubyCallNodeParameters callNodeParameters,
+            Assumption assumption1, Assumption assumption2) {
+        super(language, callNodeParameters, assumption1, assumption2);
+    }
+
+    public InlinedOperationNode(
+            RubyLanguage language,
+            RubyCallNodeParameters callNodeParameters,
+            Assumption assumption1, Assumption assumption2, Assumption assumption3) {
+        super(language, callNodeParameters, assumption1, assumption2, assumption3);
     }
 
     protected Object rewriteAndCall(VirtualFrame frame, Object receiver, Object... arguments) {

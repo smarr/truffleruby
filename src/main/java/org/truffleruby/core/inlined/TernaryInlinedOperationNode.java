@@ -23,9 +23,8 @@ public abstract class TernaryInlinedOperationNode extends InlinedOperationNode {
 
     public TernaryInlinedOperationNode(
             RubyLanguage language,
-            RubyCallNodeParameters callNodeParameters,
-            Assumption... assumptions) {
-        super(language, callNodeParameters, assumptions);
+            RubyCallNodeParameters callNodeParameters) {
+        super(language, callNodeParameters);
     }
 
     protected abstract RubyNode getReceiver();
