@@ -9,6 +9,7 @@
  */
 package org.truffleruby.language.constants;
 
+import com.oracle.truffle.api.Assumption;
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
@@ -27,7 +28,7 @@ import org.truffleruby.language.control.RaiseException;
 import com.oracle.truffle.api.frame.VirtualFrame;
 
 /** Read a constant using the current lexical scope: CONST */
-public abstract class ReadConstantWithLexicalScopeNode extends RubyContextSourceNode {
+public final class ReadConstantWithLexicalScopeNode extends RubyContextSourceNode {
 
     private final LexicalScope lexicalScope;
     private final String name;
@@ -35,31 +36,42 @@ public abstract class ReadConstantWithLexicalScopeNode extends RubyContextSource
     @Child private LookupConstantWithLexicalScopeNode lookupConstantNode;
     @Child private GetConstantNode getConstantNode;
 
+    @CompilerDirectives.CompilationFinal Assumption constantAssumption;
+    @CompilerDirectives.CompilationFinal Object constantValue;
+
     public ReadConstantWithLexicalScopeNode(LexicalScope lexicalScope, String name) {
         this.lexicalScope = lexicalScope;
         this.name = name;
     }
 
-    @Specialization(assumptions = "constant.getAssumptions()", guards = "constantValue != null")
-    protected Object perfectConstant(
-            @Cached("doLookup()") ConstantLookupResult constant,
-            @Cached("getPerfectValue(constant)") Object constantValue) {
-        return constantValue;
+    @Override
+    public Object execute(VirtualFrame frame) {
+        // take cached result if possible
+        if (constantValue != null && constantAssumption != null && constantAssumption.isValid()) {
+            return constantValue;
+        }
+
+        if (constantAssumption == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            // we didn't previously do the lookup
+            ConstantLookupResult lookupResult = ModuleOperations.lookupConstantWithLexicalScope(getContext(), lexicalScope, name);
+            constantAssumption = lookupResult.getAssumptions();
+            if (lookupResult.isDeprecated()) {
+                return null;
+            }
+            RubyConstant c = lookupResult.getConstant();
+            if (c == null || !c.hasValue()) {
+                return null;
+            }
+            return constantValue = c.getValue();
+        }
+
+        // we attempted a lookup previously, so, this isn't a perfect constant
+        return notPerfect();
     }
 
-    protected Object getPerfectValue(ConstantLookupResult constant) {
-        if (constant == null || constant.isDeprecated()) {
-            return null;
-        }
-        RubyConstant c = constant.getConstant();
-        if (c == null || !c.hasValue()) {
-            return null;
-        }
-        return c.getValue();
-    }
 
-    @Specialization
-    public Object notPerfect(VirtualFrame frame) {
+    public Object notPerfect() {
         final RubyModule module = lexicalScope.getLiveModule();
         if (lookupConstantNode == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
@@ -69,11 +81,6 @@ public abstract class ReadConstantWithLexicalScopeNode extends RubyContextSource
 
         final RubyConstant constant = lookupConstantNode.lookupConstant(lexicalScope, module, name, true);
         return getConstantNode.executeGetConstant(lexicalScope, module, name, constant, lookupConstantNode);
-    }
-
-    @CompilerDirectives.TruffleBoundary
-    protected ConstantLookupResult doLookup() {
-        return ModuleOperations.lookupConstantWithLexicalScope(getContext(), lexicalScope, name);
     }
 
     @Override

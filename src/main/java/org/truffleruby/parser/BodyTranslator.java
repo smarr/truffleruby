@@ -70,7 +70,7 @@ import org.truffleruby.language.SourceIndexLength;
 import org.truffleruby.language.constants.OrAssignConstantNode;
 import org.truffleruby.language.constants.ReadConstantNode;
 import org.truffleruby.language.constants.ReadConstantWithDynamicScopeNode;
-import org.truffleruby.language.constants.ReadConstantWithLexicalScopeNodeGen;
+import org.truffleruby.language.constants.ReadConstantWithLexicalScopeNode;
 import org.truffleruby.language.constants.WriteConstantNode;
 import org.truffleruby.language.control.AndNode;
 import org.truffleruby.language.control.BreakID;
@@ -1253,7 +1253,7 @@ public class BodyTranslator extends Translator {
             ret = new ReadConstantWithDynamicScopeNode(name);
         } else {
             final LexicalScope lexicalScope = environment.getStaticLexicalScope();
-            ret = ReadConstantWithLexicalScopeNodeGen.create(lexicalScope, name);
+            ret = new ReadConstantWithLexicalScopeNode(lexicalScope, name);
         }
         ret.unsafeSetSourceSection(sourceSection);
         return addNewlineIfNeeded(node, ret);
