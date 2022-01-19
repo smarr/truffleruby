@@ -38,6 +38,7 @@ public final class ReadConstantWithLexicalScopeNode extends RubyContextSourceNod
 
     @CompilerDirectives.CompilationFinal Assumption constantAssumption;
     @CompilerDirectives.CompilationFinal Object constantValue;
+    @CompilerDirectives.CompilationFinal RubyConstant constant;
 
     public ReadConstantWithLexicalScopeNode(LexicalScope lexicalScope, String name) {
         this.lexicalScope = lexicalScope;
@@ -57,7 +58,7 @@ public final class ReadConstantWithLexicalScopeNode extends RubyContextSourceNod
             ConstantLookupResult lookupResult = ModuleOperations.lookupConstantWithLexicalScope(getContext(), lexicalScope, name);
             constantAssumption = lookupResult.getAssumptions();
             if (!lookupResult.isDeprecated()) {
-                RubyConstant c = lookupResult.getConstant();
+                RubyConstant c = constant = lookupResult.getConstant();
                 if (c != null && c.hasValue()) {
                     return constantValue = c.getValue();
                 }
@@ -68,37 +69,47 @@ public final class ReadConstantWithLexicalScopeNode extends RubyContextSourceNod
         return notPerfect();
     }
 
-
     public Object notPerfect() {
+        final RubyConstant constant;
         final RubyModule module = lexicalScope.getLiveModule();
-        if (lookupConstantNode == null) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            lookupConstantNode = insert(LookupConstantWithLexicalScopeNodeGen.create(lexicalScope, name));
-        }
-        if (getConstantNode == null) {
-            CompilerDirectives.transferToInterpreterAndInvalidate();
-            getConstantNode = insert(GetConstantNode.create());
-        }
 
-        final RubyConstant constant = lookupConstantNode.lookupConstant(lexicalScope, module, name, true);
+        if (constantAssumption.isValid() && this.constant != null) {
+            constant = this.constant;
+        } else {
+            if (lookupConstantNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                lookupConstantNode = insert(LookupConstantWithLexicalScopeNodeGen.create(lexicalScope, name));
+            }
+            if (getConstantNode == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                getConstantNode = insert(GetConstantNode.create());
+            }
+
+            constant = lookupConstantNode.lookupConstant(lexicalScope, module, name, true);
+        }
         return getConstantNode.executeGetConstant(lexicalScope, module, name, constant, lookupConstantNode);
     }
 
     @Override
     public Object isDefined(VirtualFrame frame, RubyLanguage language, RubyContext context) {
         final RubyConstant constant;
-        try {
-            if (lookupConstantNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                lookupConstantNode = LookupConstantWithLexicalScopeNodeGen.create(lexicalScope, name);
+
+        if (constantAssumption.isValid() && this.constant != null) {
+            constant = this.constant;
+        } else {
+            try {
+                if (lookupConstantNode == null) {
+                    CompilerDirectives.transferToInterpreterAndInvalidate();
+                    lookupConstantNode = LookupConstantWithLexicalScopeNodeGen.create(lexicalScope, name);
+                }
+                constant = lookupConstantNode.executeLookupConstant();
+            } catch (RaiseException e) {
+                if (e.getException().getLogicalClass() == coreLibrary().nameErrorClass) {
+                    // private constant
+                    return nil;
+                }
+                throw e;
             }
-            constant = lookupConstantNode.executeLookupConstant();
-        } catch (RaiseException e) {
-            if (e.getException().getLogicalClass() == coreLibrary().nameErrorClass) {
-                // private constant
-                return nil;
-            }
-            throw e;
         }
 
         if (ModuleOperations.isConstantDefined(constant)) {
