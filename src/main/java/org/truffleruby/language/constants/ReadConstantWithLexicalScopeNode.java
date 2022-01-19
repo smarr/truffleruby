@@ -80,12 +80,13 @@ public final class ReadConstantWithLexicalScopeNode extends RubyContextSourceNod
                 CompilerDirectives.transferToInterpreterAndInvalidate();
                 lookupConstantNode = insert(LookupConstantWithLexicalScopeNodeGen.create(lexicalScope, name));
             }
-            if (getConstantNode == null) {
-                CompilerDirectives.transferToInterpreterAndInvalidate();
-                getConstantNode = insert(GetConstantNode.create());
-            }
 
             constant = lookupConstantNode.lookupConstant(lexicalScope, module, name, true);
+        }
+
+        if (getConstantNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();
+            getConstantNode = insert(GetConstantNode.create());
         }
         return getConstantNode.executeGetConstant(lexicalScope, module, name, constant, lookupConstantNode);
     }
