@@ -56,14 +56,12 @@ public final class ReadConstantWithLexicalScopeNode extends RubyContextSourceNod
             // we didn't previously do the lookup
             ConstantLookupResult lookupResult = ModuleOperations.lookupConstantWithLexicalScope(getContext(), lexicalScope, name);
             constantAssumption = lookupResult.getAssumptions();
-            if (lookupResult.isDeprecated()) {
-                return null;
+            if (!lookupResult.isDeprecated()) {
+                RubyConstant c = lookupResult.getConstant();
+                if (c != null && c.hasValue()) {
+                    return constantValue = c.getValue();
+                }
             }
-            RubyConstant c = lookupResult.getConstant();
-            if (c == null || !c.hasValue()) {
-                return null;
-            }
-            return constantValue = c.getValue();
         }
 
         // we attempted a lookup previously, so, this isn't a perfect constant
