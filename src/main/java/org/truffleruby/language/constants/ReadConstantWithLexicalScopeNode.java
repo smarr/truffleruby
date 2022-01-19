@@ -94,7 +94,7 @@ public final class ReadConstantWithLexicalScopeNode extends RubyContextSourceNod
     public Object isDefined(VirtualFrame frame, RubyLanguage language, RubyContext context) {
         final RubyConstant constant;
 
-        if (constantAssumption.isValid() && this.constant != null) {
+        if (constantAssumption != null && constantAssumption.isValid() && this.constant != null) {
             constant = this.constant;
         } else {
             try {
