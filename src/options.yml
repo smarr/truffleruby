@@ -1,3 +1,4 @@
+# force execution, just to be sure
 LANGUAGE_OPTIONS:
 - FROZEN_STRING_LITERALS
 - BACKTRACES_OMIT_UNUSED
