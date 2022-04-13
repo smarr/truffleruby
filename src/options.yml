@@ -1,4 +1,3 @@
-# force execution, just to be sure
 LANGUAGE_OPTIONS:
 - FROZEN_STRING_LITERALS
 - BACKTRACES_OMIT_UNUSED
@@ -182,7 +181,7 @@ INTERNAL: # Options for debugging the TruffleRuby implementation
     # Options to help debugging the implementation performance
     BASICOPS_INLINE: [basic-ops-inline, boolean, true, Inline basic operations (like Fixnum operators) in the AST without a call]
     BASICOPS_LOG_REWRITE: [basic-ops-log-rewrite, boolean, false, Log the receiver and arguments when basic operations like Fixnum operators cannot be handled inline]
-    PROFILE_ARGUMENTS: [profile-arguments, boolean, true, Profile the value and class of the receiver and arguments]
+    PROFILE_ARGUMENTS: [profile-arguments, boolean, false, Profile the value and class of the receiver and arguments]
 
     # Inline cache sizes
     DEFAULT_CACHE: [default-cache, integer, 8, Default size for caches]

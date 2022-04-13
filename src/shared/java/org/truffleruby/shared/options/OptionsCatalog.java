@@ -107,7 +107,7 @@ public class OptionsCatalog {
     public static final OptionKey<Boolean> CHAOS_DATA_KEY = new OptionKey<>(false);
     public static final OptionKey<Boolean> BASICOPS_INLINE_KEY = new OptionKey<>(true);
     public static final OptionKey<Boolean> BASICOPS_LOG_REWRITE_KEY = new OptionKey<>(false);
-    public static final OptionKey<Boolean> PROFILE_ARGUMENTS_KEY = new OptionKey<>(true);
+    public static final OptionKey<Boolean> PROFILE_ARGUMENTS_KEY = new OptionKey<>(false);
     public static final OptionKey<Integer> DEFAULT_CACHE_KEY = new OptionKey<>(8);
     public static final OptionKey<Integer> METHOD_LOOKUP_CACHE_KEY = new OptionKey<>(DEFAULT_CACHE_KEY.getDefaultValue());
     public static final OptionKey<Integer> DISPATCH_CACHE_KEY = new OptionKey<>(DEFAULT_CACHE_KEY.getDefaultValue());

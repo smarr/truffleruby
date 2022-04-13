@@ -54,7 +54,7 @@ public class LanguageOptions {
     public final boolean CHAOS_DATA;
     /** --basic-ops-inline=true */
     public final boolean BASICOPS_INLINE;
-    /** --profile-arguments=true */
+    /** --profile-arguments=false */
     public final boolean PROFILE_ARGUMENTS;
     /** --default-cache=8 */
     public final int DEFAULT_CACHE;
