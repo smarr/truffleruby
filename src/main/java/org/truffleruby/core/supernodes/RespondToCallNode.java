@@ -34,16 +34,13 @@ import static org.truffleruby.language.dispatch.MissingBehavior.CALL_METHOD_MISS
 
 public class RespondToCallNode extends RubyContextSourceNode {
     protected final RubySymbol lookupSymbol;
-    protected final DispatchConfiguration dispatchConfig;
+    protected final DispatchConfiguration respondToDispatchConfig;
 
     @Child protected RubyNode receiverExpr;
     @Child protected MetaClassNode metaclassNode;
     @Child protected LookupMethodNode respondToMethodLookup;
     @Child protected LookupMethodNode targetMethodLookup;
     @Child protected InternalRespondToNode dispatchRespondToMissing;
-
-    protected final ConditionProfile kernelRespondTo;
-    protected final ConditionProfile methodMissing;
 
     @CompilationFinal protected ConditionProfile isTrueProfile;
     @CompilationFinal protected ConditionProfile respondToMissingProfile;
@@ -62,18 +59,19 @@ public class RespondToCallNode extends RubyContextSourceNode {
         RubyNode[] args = parameters.getArguments();
         assert args.length == 1 && args[0] instanceof ObjectLiteralNode;
         lookupSymbol = (RubySymbol) ((ObjectLiteralNode) args[0]).getObject();
-        this.dispatchConfig = parameters.isIgnoreVisibility() ? PRIVATE : PROTECTED;
+        this.respondToDispatchConfig = parameters.isIgnoreVisibility() ? PRIVATE : PROTECTED;
 
         assert parameters.getBlock() == null;
         assert !parameters.isSafeNavigation();
         assert !parameters.isSplatted();
         assert !parameters.isAttrAssign();
 
-        kernelRespondTo = ConditionProfile.createBinaryProfile();
-        methodMissing = ConditionProfile.createBinaryProfile();
-
         metaclassNode = MetaClassNode.create();
         respondToMethodLookup = LookupMethodNode.create();
+    }
+
+    public DispatchConfiguration getRespondToDispatchConfig() {
+        return respondToDispatchConfig;
     }
 
     public RubyNode getReceiver() {
@@ -107,14 +105,14 @@ public class RespondToCallNode extends RubyContextSourceNode {
         assert RubyArguments.getSelf(rubyArgs) == receiverObject;
 
         final RubyClass receiverMetaclass = metaclassNode.execute(receiverObject);
-        final InternalMethod method = respondToMethodLookup.execute(frame, receiverMetaclass, "respond_to?", dispatchConfig);
+        final InternalMethod method = respondToMethodLookup.execute(frame, receiverMetaclass, "respond_to?", respondToDispatchConfig);
 
-        if (kernelRespondTo.profile(method != null && method.isBuiltIn())) {
+        if (method != null && method.isBuiltIn()) {
             assert method == getContext().getCoreMethods().KERNEL_RESPOND_TO;
             return handleKernelRespondTo(frame, receiverObject, receiverMetaclass);
         }
 
-        if (methodMissing.profile(method == null || method.isUndefined())) {
+        if (method == null || method.isUndefined()) {
             return handleMethodMissing(frame, receiverObject, rubyArgs);
         }
 
@@ -169,7 +167,7 @@ public class RespondToCallNode extends RubyContextSourceNode {
     }
 
     protected Object handleMethodMissing(VirtualFrame frame, Object self, Object[] rubyArgs) {
-        assert dispatchConfig.missingBehavior == CALL_METHOD_MISSING;
+        assert respondToDispatchConfig.missingBehavior == CALL_METHOD_MISSING;
 
         // Both branches implicitly profile through lazy node creation
         if (RubyGuards.isForeignObject(self)) { // TODO (eregon, 16 Aug 2021) maybe use a final boolean on the class to know if foreign
