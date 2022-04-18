@@ -128,6 +128,10 @@ public class RespondToCallNode extends RubyContextSourceNode {
     }
 
     private Object handleCustomRespondTo(VirtualFrame frame, Object receiverObject, Object[] rubyArgs, InternalMethod method) {
+        if (callNode == null) {
+            CompilerDirectives.transferToInterpreterAndInvalidate();;
+            callNode = CallInternalMethodNode.create();
+        }
         RubyArguments.setMethod(rubyArgs, method);
 
         // REM(sm): for now, I am not handling this. Here DispatchNode.getFrameOrStorageIfRequired(frame) was used
