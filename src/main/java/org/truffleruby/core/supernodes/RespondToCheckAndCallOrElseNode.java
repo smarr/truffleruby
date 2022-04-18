@@ -116,6 +116,7 @@ public class RespondToCheckAndCallOrElseNode extends RubyContextSourceNode {
             return handleKernelRespondTo(frame, receiverObject, receiverMetaclass);
         }
 
+        CompilerDirectives.transferToInterpreterAndInvalidate();
         throw new RuntimeException("Not yet implemented");
 //        if (methodMissing.profile(method == null || method.isUndefined())) {
 //            return handleMethodMissing(frame, receiverObject, rubyArgs);
