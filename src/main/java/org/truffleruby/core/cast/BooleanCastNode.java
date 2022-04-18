@@ -35,6 +35,8 @@ public abstract class BooleanCastNode extends RubyBaseNode {
         return BooleanCastNodeGen.create(null);
     }
 
+    public abstract RubyNode getValue();
+
     /** Execute with child node */
     public abstract boolean execute(VirtualFrame frame);
 

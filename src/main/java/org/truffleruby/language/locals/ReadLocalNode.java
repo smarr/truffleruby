@@ -23,7 +23,7 @@ import com.oracle.truffle.api.instrumentation.Tag;
 
 public abstract class ReadLocalNode extends RubyContextSourceNode {
 
-    protected final int frameSlot;
+    public final int frameSlot;
     protected final LocalVariableType type;
 
     @Child protected ReadFrameSlotNode readFrameSlotNode;

@@ -235,6 +235,7 @@ public class CoreMethodAssumptions {
                     if (!callParameters.isAttrAssign() && args[0] instanceof ObjectLiteralNode) {
                         return new RespondToCallNode(callParameters);
                     }
+                    break;
                 default:
             }
         } else if (n == 3) {

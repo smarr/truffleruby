@@ -60,6 +60,8 @@ import org.truffleruby.core.rope.RopeConstants;
 import org.truffleruby.core.string.FrozenStrings;
 import org.truffleruby.core.string.InterpolatedStringNode;
 import org.truffleruby.core.string.StringUtils;
+import org.truffleruby.core.supernodes.RespondToCallNode;
+import org.truffleruby.core.supernodes.RespondToCheckAndCallOrElseNode;
 import org.truffleruby.core.support.TypeNodes;
 import org.truffleruby.core.string.ImmutableRubyString;
 import org.truffleruby.language.LexicalScope;
@@ -128,6 +130,7 @@ import org.truffleruby.language.locals.FlipFlopStateNode;
 import org.truffleruby.language.locals.InitFlipFlopSlotNode;
 import org.truffleruby.language.locals.LocalFlipFlopStateNode;
 import org.truffleruby.language.locals.ReadLocalNode;
+import org.truffleruby.language.locals.ReadLocalVariableNode;
 import org.truffleruby.language.locals.WriteLocalNode;
 import org.truffleruby.language.methods.Arity;
 import org.truffleruby.language.methods.BlockDefinitionNode;
@@ -1904,6 +1907,21 @@ public class BodyTranslator extends Translator {
         if (thenBody != null && elseBody != null) {
             final RubyNode thenBodyTranslated = thenBody.accept(this);
             final RubyNode elseBodyTranslated = elseBody.accept(this);
+
+            if (condition instanceof RespondToCallNode) {
+                RespondToCallNode cond = ((RespondToCallNode) condition);
+                RubyNode rcvr = cond.getReceiver();
+                if (rcvr instanceof ReadLocalVariableNode && thenBodyTranslated instanceof RubyCallNode && elseBodyTranslated instanceof ReadLocalVariableNode) {
+                    if (((ReadLocalVariableNode) rcvr).frameSlot == ((ReadLocalVariableNode) elseBodyTranslated).frameSlot) {
+                        RubyCallNode thenBodyCall = (RubyCallNode) thenBodyTranslated;
+                        if (thenBodyCall.getName().equals(cond.getLookupSymbol().getString())) {
+                            ret = new RespondToCheckAndCallOrElseNode(cond, thenBodyCall.getArguments());
+                            ret.unsafeSetSourceSection(sourceSection);
+                            return ret;
+                        }
+                    }
+                }
+            }
             ret = new IfElseNode(condition, thenBodyTranslated, elseBodyTranslated);
             ret.unsafeSetSourceSection(sourceSection);
         } else if (thenBody != null) {

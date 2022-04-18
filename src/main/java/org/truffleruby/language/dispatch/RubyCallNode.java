@@ -84,6 +84,10 @@ public class RubyCallNode extends LiteralCallNode implements AssignableNode {
         }
     }
 
+    public RubyNode[] getArguments() {
+        return arguments;
+    }
+
     @Override
     public Object execute(VirtualFrame frame) {
         final Object receiverObject = receiver.execute(frame);

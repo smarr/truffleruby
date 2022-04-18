@@ -11,11 +11,15 @@ package org.truffleruby.language.control;
 
 import org.truffleruby.core.cast.BooleanCastNode;
 import org.truffleruby.core.cast.BooleanCastNodeGen;
+import org.truffleruby.core.supernodes.RespondToCallNode;
+import org.truffleruby.core.supernodes.RespondToCheckAndCallOrElseNode;
 import org.truffleruby.language.RubyContextSourceNode;
 import org.truffleruby.language.RubyNode;
 
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.profiles.ConditionProfile;
+import org.truffleruby.language.dispatch.RubyCallNode;
+import org.truffleruby.language.locals.ReadLocalVariableNode;
 
 public class IfElseNode extends RubyContextSourceNode {
 
@@ -55,6 +59,20 @@ public class IfElseNode extends RubyContextSourceNode {
     public RubyNode simplifyAsTailExpression() {
         final RubyNode newThen = thenBody.simplifyAsTailExpression();
         final RubyNode newElse = elseBody.simplifyAsTailExpression();
+
+        if (condition.getValue() instanceof RespondToCallNode) {
+            RespondToCallNode cond = ((RespondToCallNode) condition.getValue());
+            RubyNode rcvr = cond.getReceiver();
+            if (rcvr instanceof ReadLocalVariableNode && newThen instanceof RubyCallNode && newElse instanceof ReadLocalVariableNode) {
+                if (((ReadLocalVariableNode) rcvr).frameSlot == ((ReadLocalVariableNode) newElse).frameSlot) {
+                    RubyCallNode thenBodyCall = (RubyCallNode) newThen;
+                    if (thenBodyCall.getName().equals(cond.getLookupSymbol().getString())) {
+                        return new RespondToCheckAndCallOrElseNode(cond, thenBodyCall.getArguments()).copySourceSection(this);
+                    }
+                }
+            }
+        }
+
         return new IfElseNode(condition, newThen, newElse).copySourceSection(this);
     }
 }
