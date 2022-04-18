@@ -25,6 +25,7 @@ public class CoreMethods {
     public final InternalMethod KERNEL_IS_NIL;
     public final InternalMethod KERNEL_IS_A;
     public final InternalMethod KERNEL_KIND_OF;
+    public final InternalMethod KERNEL_RESPOND_TO;
     public final InternalMethod STRING_BYTESIZE;
     public final InternalMethod MODULE_CASE_EQUAL;
     public final InternalMethod STRING_EQUAL;
@@ -52,6 +53,7 @@ public class CoreMethods {
         STRING_BYTESIZE = getMethod(stringClass, "bytesize");
         KERNEL_IS_A = getMethod(kernelModule, "is_a?");
         KERNEL_KIND_OF = getMethod(kernelModule, "kind_of?");
+        KERNEL_RESPOND_TO = getMethod(kernelModule, "respond_to?");
         MODULE_CASE_EQUAL = getMethod(moduleClass, "===");
         STRING_EQUAL = getMethod(stringClass, "==");
         SYMBOL_TO_PROC = getMethod(symbolClass, "to_proc");
