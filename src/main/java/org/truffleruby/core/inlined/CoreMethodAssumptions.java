@@ -19,9 +19,11 @@ import org.truffleruby.RubyLanguage;
 import org.truffleruby.core.CoreLibrary;
 import org.truffleruby.core.klass.RubyClass;
 import org.truffleruby.core.module.ModuleFields;
+import org.truffleruby.core.supernodes.RespondToCallNode;
 import org.truffleruby.language.RubyNode;
 import org.truffleruby.language.dispatch.RubyCallNode;
 import org.truffleruby.language.dispatch.RubyCallNodeParameters;
+import org.truffleruby.language.literal.ObjectLiteralNode;
 import org.truffleruby.language.methods.BlockDefinitionNode;
 import org.truffleruby.parser.TranslatorEnvironment;
 
@@ -228,6 +230,11 @@ public class CoreMethodAssumptions {
                     return InlinedIsANodeGen.create(language, callParameters, self, args[0]);
                 case "kind_of?":
                     return InlinedKindOfNodeGen.create(language, callParameters, self, args[0]);
+                case "respond_to?":
+                    assert !callParameters.isSplatted() && !callParameters.isSafeNavigation() : "checked above already";
+                    if (!callParameters.isAttrAssign() && args[0] instanceof ObjectLiteralNode) {
+                        return new RespondToCallNode(callParameters);
+                    }
                 default:
             }
         } else if (n == 3) {
