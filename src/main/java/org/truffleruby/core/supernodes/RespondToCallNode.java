@@ -42,7 +42,6 @@ public class RespondToCallNode extends RubyContextSourceNode {
     @Child protected LookupMethodNode targetMethodLookup;
     @Child protected InternalRespondToNode dispatchRespondToMissing;
 
-    @CompilationFinal protected ConditionProfile isTrueProfile;
     @CompilationFinal protected ConditionProfile respondToMissingProfile;
     @CompilationFinal protected BranchProfile methodMissingMissing;
 
@@ -123,11 +122,10 @@ public class RespondToCallNode extends RubyContextSourceNode {
         if (targetMethodLookup == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             targetMethodLookup = LookupMethodNode.create();
-            isTrueProfile = ConditionProfile.createBinaryProfile();
         }
         String methodName = lookupSymbol.getString();
         InternalMethod method = targetMethodLookup.execute(frame, receiverMetaclass, methodName, PUBLIC);
-        if (isTrueProfile.profile(method != null && method.isDefined() && method.isImplemented())) {
+        if (method != null && method.isDefined() && method.isImplemented()) {
             return true;
         } else {
             return handleRespondToMissing(frame, receiverObject);
