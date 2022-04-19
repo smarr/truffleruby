@@ -17,9 +17,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.interop.InteropLibrary;
 import com.oracle.truffle.api.interop.UnsupportedMessageException;
+import com.oracle.truffle.api.nodes.DenyReplace;
+import com.oracle.truffle.api.nodes.NodeCost;
 import com.oracle.truffle.api.utilities.AssumedValue;
 import org.truffleruby.RubyContext;
 import org.truffleruby.builtins.CoreMethod;
@@ -58,6 +61,7 @@ import org.truffleruby.core.hash.HashingNodes;
 import org.truffleruby.core.hash.RubyHash;
 import org.truffleruby.core.hash.library.PackedHashStoreLibrary;
 import org.truffleruby.core.inlined.AlwaysInlinedMethodNode;
+import org.truffleruby.core.inlined.CoreMethods;
 import org.truffleruby.core.kernel.KernelNodesFactory.SameOrEqualNodeFactory;
 import org.truffleruby.core.kernel.KernelNodesFactory.SingletonMethodsNodeFactory;
 import org.truffleruby.core.klass.RubyClass;
@@ -120,6 +124,7 @@ import org.truffleruby.language.loader.RequireNodeGen;
 import org.truffleruby.language.locals.FindDeclarationVariableNodes.FindAndReadDeclarationVariableNode;
 import org.truffleruby.language.methods.GetMethodObjectNode;
 import org.truffleruby.language.methods.InternalMethod;
+import org.truffleruby.language.methods.LookupMethodOnSelfNode;
 import org.truffleruby.language.objects.AllocationTracing;
 import org.truffleruby.language.objects.CheckIVarNameNode;
 import org.truffleruby.language.objects.IsANode;
@@ -220,18 +225,41 @@ public abstract class KernelNodes {
     }
 
     /** Check if operands are the same object or call #eql? */
-    @GenerateUncached
     public abstract static class SameOrEqlNode extends RubyBaseNode {
+        protected static final String METHOD = "==";
+        private static final SameOrEqlNodeUncached UNCACHED = new SameOrEqlNodeUncached();
 
         public static SameOrEqlNode create() {
-            return KernelNodesFactory.SameOrEqlNodeGen.create();
+            return KernelNodesFactory.SameOrEqlSpecNodeGen.create();
         }
 
         public static SameOrEqlNode getUncached() {
-            return KernelNodesFactory.SameOrEqlNodeGen.getUncached();
+            return UNCACHED;
         }
 
         public abstract boolean execute(Object a, Object b);
+
+        protected CoreMethods coreMethods() {
+            return getContext().getCoreMethods();
+        }
+    }
+
+    public abstract static class SameOrEqlSpecNode extends SameOrEqlNode {
+
+        @Specialization(
+                guards = {
+                        "stringsSelf.isRubyString(self)",
+                        "stringsB.isRubyString(b)",
+                        "lookupNode.lookupProtected(self, METHOD) == coreMethods().STRING_EQUAL"
+                })
+//                , assumptions = "assumptions")
+        protected boolean stringEqual(Object self, Object b,
+                                      @CachedLibrary(limit = "LIBSTRING_CACHE") RubyStringLibrary stringsSelf,
+                                      @CachedLibrary(limit = "LIBSTRING_CACHE") RubyStringLibrary stringsB,
+                                      @Cached LookupMethodOnSelfNode lookupNode,
+                                      @Cached StringNodes.StringEqualNode stringEqualNode) {
+            return stringEqualNode.executeStringEqual(stringsSelf.getRope(self), stringsB.getRope(b));
+        }
 
         @Specialization(guards = "referenceEqual.executeReferenceEqual(a, b)")
         protected boolean refEqual(Object a, Object b,
@@ -245,6 +273,26 @@ public abstract class KernelNodes {
                 @Cached DispatchNode eql,
                 @Cached BooleanCastNode booleanCast) {
             return referenceEqual.executeReferenceEqual(a, b) || booleanCast.execute(eql.call(a, "eql?", b));
+        }
+    }
+
+    private static final class SameOrEqlNodeUncached extends SameOrEqlNode {
+
+        @TruffleBoundary
+        @Override
+        public boolean execute(Object a, Object b) {
+            return ReferenceEqualNode.getUncached().executeReferenceEqual(a, b) ||
+                    BooleanCastNodeGen.getUncached().execute(DispatchNode.getUncached().call(a, "eql?", b));
+        }
+
+        @Override
+        public NodeCost getCost() {
+            return NodeCost.MEGAMORPHIC;
+        }
+
+        @Override
+        public boolean isAdoptable() {
+            return false;
         }
     }
 

@@ -25,6 +25,10 @@ public abstract class LookupMethodOnSelfNode extends RubyBaseNode {
         return LookupMethodOnSelfNodeGen.create();
     }
 
+    public InternalMethod lookupProtected(Object self, String name) {
+        return execute(null, self, name, DispatchConfiguration.PROTECTED);
+    }
+
     public InternalMethod lookupProtected(Frame frame, Object self, String name) {
         return execute(frame, self, name, DispatchConfiguration.PROTECTED);
     }
