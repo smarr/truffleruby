@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import com.oracle.truffle.api.dsl.Bind;
 import com.oracle.truffle.api.dsl.GeneratedBy;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.interop.InteropLibrary;
@@ -250,6 +251,12 @@ public abstract class KernelNodes {
                 guards = {
                         "stringsSelf.isRubyString(self)",
                         "stringsB.isRubyString(b)",
+                        "ropeSelf.getEncoding() == ropeB.getEncoding()",
+                        "ropeSelf.byteLength() == 1",
+                        "ropeB.byteLength() == 1",
+                        "ropeSelf.getRawBytes() != null",
+                        "ropeB.getRawBytes() != null",
+                        "ropeSelf.getRawBytes().length < 16",
                         "lookupNode.lookupProtected(self, METHOD) == coreMethods().STRING_EQUAL"
                 })
 //                , assumptions = "assumptions")
@@ -257,8 +264,21 @@ public abstract class KernelNodes {
                                       @CachedLibrary(limit = "LIBSTRING_CACHE") RubyStringLibrary stringsSelf,
                                       @CachedLibrary(limit = "LIBSTRING_CACHE") RubyStringLibrary stringsB,
                                       @Cached LookupMethodOnSelfNode lookupNode,
-                                      @Cached StringNodes.StringEqualNode stringEqualNode) {
-            return stringEqualNode.executeStringEqual(stringsSelf.getRope(self), stringsB.getRope(b));
+                                      @Cached StringNodes.StringEqualNode stringEqualNode,
+                                      @Bind("stringsSelf.getRope(self)") Rope ropeSelf,
+                                      @Bind("stringsB.getRope(b)") Rope ropeB) {
+            byte[] bytesSelf = ropeSelf.getRawBytes();
+            byte[] bytesB = ropeB.getRawBytes();
+            if (bytesSelf.length != bytesB.length) {
+                return false;
+            }
+
+            for (int i = 0; i < bytesSelf.length && i < 16; i += 1) {
+                if (bytesSelf[i] != bytesB[i]) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         @Specialization(guards = "referenceEqual.executeReferenceEqual(a, b)")
