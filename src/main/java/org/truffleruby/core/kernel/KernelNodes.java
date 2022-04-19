@@ -252,11 +252,11 @@ public abstract class KernelNodes {
                         "stringsSelf.isRubyString(self)",
                         "stringsB.isRubyString(b)",
                         "ropeSelf.getEncoding() == ropeB.getEncoding()",
-                        "ropeSelf.byteLength() == 1",
-                        "ropeB.byteLength() == 1",
-                        "ropeSelf.getRawBytes() != null",
-                        "ropeB.getRawBytes() != null",
-                        "ropeSelf.getRawBytes().length < 16",
+//                        "ropeSelf.byteLength() == 1",
+//                        "ropeB.byteLength() == 1",
+//                        "ropeSelf.getRawBytes() != null",
+//                        "ropeB.getRawBytes() != null",
+                        "bytesSelf.length < 16",
                         "lookupNode.lookupProtected(self, METHOD) == coreMethods().STRING_EQUAL"
                 })
 //                , assumptions = "assumptions")
@@ -265,10 +265,12 @@ public abstract class KernelNodes {
                                       @CachedLibrary(limit = "LIBSTRING_CACHE") RubyStringLibrary stringsB,
                                       @Cached LookupMethodOnSelfNode lookupNode,
                                       @Cached StringNodes.StringEqualNode stringEqualNode,
+                                      @Cached RopeNodes.BytesNode bytesNodeSelf,
+                                      @Cached RopeNodes.BytesNode bytesNodeB,
                                       @Bind("stringsSelf.getRope(self)") Rope ropeSelf,
-                                      @Bind("stringsB.getRope(b)") Rope ropeB) {
-            byte[] bytesSelf = ropeSelf.getRawBytes();
-            byte[] bytesB = ropeB.getRawBytes();
+                                      @Bind("stringsB.getRope(b)") Rope ropeB,
+                                      @Bind("bytesNodeSelf.execute(ropeSelf)") byte[] bytesSelf) {
+            byte[] bytesB = bytesNodeB.execute(ropeB);
             if (bytesSelf.length != bytesB.length) {
                 return false;
             }
