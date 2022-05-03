@@ -20,8 +20,10 @@ import org.truffleruby.RubyLanguage;
 import org.truffleruby.core.array.ArrayUtils;
 import org.truffleruby.language.RubyContextSourceNode;
 import org.truffleruby.language.RubyNode;
+import org.truffleruby.language.dispatch.RubyAbstractCallNode;
 import org.truffleruby.language.dispatch.RubyCallNode;
 import org.truffleruby.language.dispatch.RubyCallNodeParameters;
+import org.truffleruby.language.dispatch.RubyTrivialCallNode;
 
 public abstract class InlinedReplaceableNode extends RubyContextSourceNode {
 
@@ -29,7 +31,7 @@ public abstract class InlinedReplaceableNode extends RubyContextSourceNode {
 
     @CompilationFinal(dimensions = 1) protected final Assumption[] assumptions;
 
-    private RubyCallNode replacedBy = null;
+    private RubyAbstractCallNode replacedBy = null;
 
     protected InlinedReplaceableNode(
             RubyLanguage language,
@@ -43,7 +45,7 @@ public abstract class InlinedReplaceableNode extends RubyContextSourceNode {
 
     }
 
-    protected RubyCallNode rewriteToCallNode() {
+    protected RubyAbstractCallNode rewriteToCallNode() {
         CompilerDirectives.transferToInterpreterAndInvalidate();
         return atomic(() -> {
             // Check if we are still in the AST
@@ -51,13 +53,21 @@ public abstract class InlinedReplaceableNode extends RubyContextSourceNode {
 
             if (found) {
                 // We need to pass the updated children of this node to the call node
-                RubyCallNode callNode = new RubyCallNode(parameters.withReceiverAndArguments(
+                RubyCallNodeParameters params = parameters.withReceiverAndArguments(
                         getReceiverNode(),
                         getArgumentNodes(),
-                        getBlockNode()));
-                callNode.unsafeSetSourceSection(getSourceIndexLength());
-                replacedBy = callNode;
-                return replace(callNode, this + " could not be executed inline");
+                        getBlockNode());
+                if (params.isTrivial()) {
+                    RubyTrivialCallNode callNode = new RubyTrivialCallNode(params);
+                    callNode.unsafeSetSourceSection(getSourceIndexLength());
+                    replacedBy = callNode;
+                    return replace(callNode, this + " could not be executed inline");
+                } else {
+                    RubyCallNode callNode = new RubyCallNode(params);
+                    callNode.unsafeSetSourceSection(getSourceIndexLength());
+                    replacedBy = callNode;
+                    return replace(callNode, this + " could not be executed inline");
+                }
             } else {
                 return replacedBy;
             }

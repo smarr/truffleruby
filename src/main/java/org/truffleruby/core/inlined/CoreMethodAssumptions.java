@@ -23,6 +23,7 @@ import org.truffleruby.core.supernodes.RespondToCallNode;
 import org.truffleruby.language.RubyNode;
 import org.truffleruby.language.dispatch.RubyCallNode;
 import org.truffleruby.language.dispatch.RubyCallNodeParameters;
+import org.truffleruby.language.dispatch.RubyTrivialCallNode;
 import org.truffleruby.language.literal.ObjectLiteralNode;
 import org.truffleruby.language.methods.BlockDefinitionNode;
 import org.truffleruby.parser.TranslatorEnvironment;
@@ -246,6 +247,9 @@ public class CoreMethodAssumptions {
             }
         }
 
+        if (callParameters.isTrivial()) {
+            return new RubyTrivialCallNode(callParameters);
+        }
         return new RubyCallNode(callParameters);
     }
 }

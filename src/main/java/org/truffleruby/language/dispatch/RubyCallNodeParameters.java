@@ -117,4 +117,8 @@ public class RubyCallNodeParameters {
         return isAttrAssign;
     }
 
+    public boolean isTrivial() {
+        return !isAttrAssign && !isSafeNavigation && !isVCall && !isSplatted && block == null;
+    }
+
 }
