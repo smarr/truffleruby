@@ -19,6 +19,7 @@ import org.truffleruby.language.RubyNode;
 import org.truffleruby.language.SourceIndexLength;
 import org.truffleruby.language.arguments.ProfileArgumentNodeGen;
 import org.truffleruby.language.arguments.ReadSelfNode;
+import org.truffleruby.language.control.Sequence4Node;
 import org.truffleruby.language.control.SequenceNode;
 import org.truffleruby.language.literal.NilLiteralNode;
 import org.truffleruby.language.locals.WriteLocalVariableNode;
@@ -54,6 +55,10 @@ public abstract class Translator extends AbstractNodeVisitor<RubyNode> {
             return literal;
         } else if (flattened.size() == 1) {
             return flattened.get(0);
+        } else if (flattened.size() == 4) {
+            final RubyNode[] flatSequence = flattened.toArray(RubyNode.EMPTY_ARRAY);
+            final SourceIndexLength enclosingSourceSection = enclosing(sourceSection, flatSequence);
+            return withSourceSection(enclosingSourceSection, new Sequence4Node(flatSequence[0], flatSequence[1], flatSequence[2], flatSequence[3]));
         } else {
             final RubyNode[] flatSequence = flattened.toArray(RubyNode.EMPTY_ARRAY);
 
@@ -103,6 +108,8 @@ public abstract class Translator extends AbstractNodeVisitor<RubyNode> {
                 List<RubyNode> rest = flattenFromN(sequence, allowTrailingNil, n + 1);
                 if (rest.size() == 1) {
                     flattened.add(node.subsumeFollowing(rest.get(0)));
+                } else if (rest.size() == 4) {
+                    flattened.add(node.subsumeFollowing(new Sequence4Node(rest.get(0), rest.get(1), rest.get(2), rest.get(3))));
                 } else {
                     flattened.add(node.subsumeFollowing(new SequenceNode(rest.toArray(RubyNode.EMPTY_ARRAY))));
                 }

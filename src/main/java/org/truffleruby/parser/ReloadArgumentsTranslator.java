@@ -19,6 +19,7 @@ import org.truffleruby.language.RubyNode;
 import org.truffleruby.language.SourceIndexLength;
 import org.truffleruby.language.arguments.MissingArgumentBehavior;
 import org.truffleruby.language.arguments.ReadPreArgumentNode;
+import org.truffleruby.language.control.Sequence4Node;
 import org.truffleruby.language.control.SequenceNode;
 import org.truffleruby.language.literal.ObjectLiteralNode;
 import org.truffleruby.parser.ast.ArgsParseNode;
@@ -135,6 +136,9 @@ public class ReloadArgumentsTranslator extends Translator {
 
         if (sequence.size() == 1) {
             return sequence.get(0);
+        }
+        if (sequence.size() == 4) {
+            return new Sequence4Node(sequence.get(0), sequence.get(1), sequence.get(2), sequence.get(3));
         }
         return new SequenceNode(sequence.toArray(RubyNode.EMPTY_ARRAY));
     }
