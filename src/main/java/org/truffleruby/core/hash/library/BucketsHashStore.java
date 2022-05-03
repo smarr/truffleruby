@@ -624,9 +624,10 @@ public class BucketsHashStore {
 
         @Specialization(guards = "hash.compareByIdentity")
         protected Entry lookupByIdentity(RubyHash hash, Entry[] entries, Object key,
-                                                    @Cached HashingNodes.ToHashByIdentity toHashByIdentity,
-                                                    @Cached BasicObjectNodes.ReferenceEqualNode refEqual) {
-            int hashed = toHashByIdentity.execute(key);
+                                         @Cached BasicObjectNodes.ObjectIDNode objectIDNode,
+                                         @Cached HashingNodes.HashCastResultNode hashCastResultNode,
+                                         @Cached BasicObjectNodes.ReferenceEqualNode refEqual) {
+            int hashed = hashCastResultNode.execute(objectIDNode.execute(key));
 
             final int index = getBucketIndex(hashed, entries.length);
             Entry entry = entries[index];
