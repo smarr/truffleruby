@@ -44,6 +44,7 @@ public class RubyTrivialCallNode extends RubyAbstractCallNode implements Assigna
     public RubyTrivialCallNode(RubyCallNodeParameters parameters) {
         super(parameters.isSplatted(), parameters.getDescriptor());
         assert !parameters.isSplatted();
+        assert parameters.getDescriptor() == EmptyArgumentsDescriptor.INSTANCE;
         assert null == parameters.getBlock();
         assert !parameters.isVCall();
         assert !parameters.isSafeNavigation();
@@ -66,13 +67,11 @@ public class RubyTrivialCallNode extends RubyAbstractCallNode implements Assigna
         Object[] rubyArgs = RubyArguments.allocate(arguments.length);
         RubyArguments.setSelf(rubyArgs, receiverObject);
 
-        ArgumentsDescriptor descriptor = this.descriptor;
-        boolean ruby2KeywordsHash = false;
         executeArguments(frame, rubyArgs);
 
         RubyArguments.setBlock(rubyArgs, nil);
 
-        return doCall(frame, receiverObject, descriptor, rubyArgs, ruby2KeywordsHash);
+        return doCall(frame, receiverObject, rubyArgs);
     }
 
     @Override
@@ -91,26 +90,18 @@ public class RubyTrivialCallNode extends RubyAbstractCallNode implements Assigna
 
         RubyArguments.setBlock(rubyArgs, nil);
 
-        // no ruby2_keywords behavior for assign
-        doCall(frame, receiverObject, descriptor, rubyArgs, false);
+        doCall(frame, receiverObject, rubyArgs);
     }
 
-    public Object doCall(VirtualFrame frame, Object receiverObject, ArgumentsDescriptor descriptor, Object[] rubyArgs,
-                         boolean ruby2KeywordsHash) {
-        // Remove empty kwargs in the caller, so the callee does not need to care about this special case
-        if (descriptor instanceof KeywordArgumentsDescriptor && emptyKeywordArguments(rubyArgs)) {
-            rubyArgs = removeEmptyKeywordArguments(rubyArgs);
-            descriptor = EmptyArgumentsDescriptor.INSTANCE;
-        }
-        RubyArguments.setDescriptor(rubyArgs, descriptor);
+    public Object doCall(VirtualFrame frame, Object receiverObject, Object[] rubyArgs) {
+        RubyArguments.setDescriptor(rubyArgs, EmptyArgumentsDescriptor.INSTANCE);
 
         if (dispatch == null) {
             CompilerDirectives.transferToInterpreterAndInvalidate();
             dispatch = insert(DispatchNode.create(dispatchConfig));
         }
 
-        final Object returnValue = dispatch.dispatch(frame, receiverObject, methodName, rubyArgs,
-                ruby2KeywordsHash ? this : null);
+        final Object returnValue = dispatch.dispatch(frame, receiverObject, methodName, rubyArgs, null);
 
         assert RubyGuards.assertIsValidRubyValue(returnValue);
         return returnValue;
@@ -123,7 +114,7 @@ public class RubyTrivialCallNode extends RubyAbstractCallNode implements Assigna
         RubyArguments.setSelf(rubyArgs, receiverObject);
         RubyArguments.setBlock(rubyArgs, blockObject);
         RubyArguments.setArguments(rubyArgs, argumentsObjects);
-        return doCall(frame, receiverObject, descriptor, rubyArgs, false);
+        return doCall(frame, receiverObject, rubyArgs);
     }
 
     @ExplodeLoop

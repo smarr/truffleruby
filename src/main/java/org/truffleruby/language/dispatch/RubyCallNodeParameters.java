@@ -11,6 +11,7 @@ package org.truffleruby.language.dispatch;
 
 import org.truffleruby.language.RubyNode;
 import org.truffleruby.language.arguments.ArgumentsDescriptor;
+import org.truffleruby.language.arguments.EmptyArgumentsDescriptor;
 
 public class RubyCallNodeParameters {
 
@@ -118,7 +119,7 @@ public class RubyCallNodeParameters {
     }
 
     public boolean isTrivial() {
-        return !isAttrAssign && !isSafeNavigation && !isVCall && !isSplatted && block == null;
+        return !isAttrAssign && !isSafeNavigation && !isVCall && !isSplatted && block == null && descriptor == EmptyArgumentsDescriptor.INSTANCE;
     }
 
 }
