@@ -219,14 +219,14 @@ public class BucketsHashStore {
 
     @ExportMessage
     protected Object lookupOrDefault(Frame frame, RubyHash hash, Object key, PEBiFunction defaultNode,
-            @Cached @Shared("lookup") LookupEntryNode lookup,
+            @Cached GetEntryNode lookup,
             @Cached @Exclusive ConditionProfile found) {
 
         final Entry[] entries = this.entries;
-        final HashLookupResult hashLookupResult = lookup.execute(hash, entries, key);
+        final Entry entry = lookup.execute(hash, entries, key);
 
-        if (found.profile(hashLookupResult.getEntry() != null)) {
-            return hashLookupResult.getEntry().getValue();
+        if (found.profile(entry != null)) {
+            return entry.getValue();
         }
 
         return defaultNode.accept(frame, hash, key);
@@ -613,6 +613,59 @@ public class BucketsHashStore {
             }
 
             return new HashLookupResult(hashed, index, previousEntry, null);
+        }
+
+    }
+
+    @GenerateUncached
+    abstract static class GetEntryNode extends RubyBaseNode {
+
+        public abstract Entry execute(RubyHash hash, Entry[] entries, Object key);
+
+        @Specialization(guards = "hash.compareByIdentity")
+        protected Entry lookupByIdentity(RubyHash hash, Entry[] entries, Object key,
+                                                    @Cached HashingNodes.ToHashByIdentity toHashByIdentity,
+                                                    @Cached BasicObjectNodes.ReferenceEqualNode refEqual) {
+            int hashed = toHashByIdentity.execute(key);
+
+            final int index = getBucketIndex(hashed, entries.length);
+            Entry entry = entries[index];
+
+            Entry previousEntry = null;
+
+            while (entry != null) {
+                if (refEqual.executeReferenceEqual(key, entry.getKey())) {
+                    return entry;
+                }
+
+                previousEntry = entry;
+                entry = entry.getNextInLookup();
+            }
+
+            return null;
+        }
+
+        @Specialization(guards = "!hash.compareByIdentity")
+        protected Entry lookupByHash(RubyHash hash, Entry[] entries, Object key,
+                                                @Cached HashingNodes.ToHashByHashCode toHashByHashCode,
+                                                @Cached KernelNodes.SameOrEqlNode same) {
+            int hashed = toHashByHashCode.execute(key);
+
+            final int index = getBucketIndex(hashed, entries.length);
+            Entry entry = entries[index];
+
+            Entry previousEntry = null;
+
+            while (entry != null) {
+                if (hashed == entry.getHashed() && same.execute(key, entry.getKey())) {
+                    return entry;
+                }
+
+                previousEntry = entry;
+                entry = entry.getNextInLookup();
+            }
+
+            return null;
         }
 
     }
