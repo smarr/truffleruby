@@ -631,14 +631,11 @@ public class BucketsHashStore {
             final int index = getBucketIndex(hashed, entries.length);
             Entry entry = entries[index];
 
-            Entry previousEntry = null;
-
             while (entry != null) {
                 if (refEqual.executeReferenceEqual(key, entry.getKey())) {
                     return entry;
                 }
 
-                previousEntry = entry;
                 entry = entry.getNextInLookup();
             }
 
@@ -654,14 +651,10 @@ public class BucketsHashStore {
             final int index = getBucketIndex(hashed, entries.length);
             Entry entry = entries[index];
 
-            Entry previousEntry = null;
-
             while (entry != null) {
                 if (hashed == entry.getHashed() && same.execute(key, entry.getKey())) {
                     return entry;
                 }
-
-                previousEntry = entry;
                 entry = entry.getNextInLookup();
             }
 
