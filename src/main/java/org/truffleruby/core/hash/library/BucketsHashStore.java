@@ -30,6 +30,7 @@ import org.truffleruby.RubyLanguage;
 import org.truffleruby.collections.PEBiFunction;
 import org.truffleruby.core.array.ArrayHelpers;
 import org.truffleruby.core.array.RubyArray;
+import org.truffleruby.core.basicobject.BasicObjectNodes;
 import org.truffleruby.core.hash.CompareHashKeysNode;
 import org.truffleruby.core.hash.Entry;
 import org.truffleruby.core.hash.FreezeHashKeyIfNeededNode;
@@ -38,6 +39,7 @@ import org.truffleruby.core.hash.HashLookupResult;
 import org.truffleruby.core.hash.HashingNodes;
 import org.truffleruby.core.hash.RubyHash;
 import org.truffleruby.core.hash.library.HashStoreLibrary.EachEntryCallback;
+import org.truffleruby.core.kernel.KernelNodes;
 import org.truffleruby.core.string.StringUtils;
 import org.truffleruby.language.RubyBaseNode;
 import org.truffleruby.language.RubyNode;
@@ -567,13 +569,11 @@ public class BucketsHashStore {
 
         public abstract HashLookupResult execute(RubyHash hash, Entry[] entries, Object key);
 
-        @Specialization
-        protected HashLookupResult lookup(RubyHash hash, Entry[] entries, Object key,
-                @Cached HashingNodes.ToHash hashNode,
-                @Cached CompareHashKeysNode compareHashKeysNode,
-                @Cached ConditionProfile byIdentityProfile) {
-            final boolean compareByIdentity = byIdentityProfile.profile(hash.compareByIdentity);
-            int hashed = hashNode.execute(key, compareByIdentity);
+        @Specialization(guards = "hash.compareByIdentity")
+        protected HashLookupResult lookupByIdentity(RubyHash hash, Entry[] entries, Object key,
+                @Cached HashingNodes.ToHashByIdentity toHashByIdentity,
+                @Cached BasicObjectNodes.ReferenceEqualNode refEqual) {
+            int hashed = toHashByIdentity.execute(key);
 
             final int index = getBucketIndex(hashed, entries.length);
             Entry entry = entries[index];
@@ -581,7 +581,30 @@ public class BucketsHashStore {
             Entry previousEntry = null;
 
             while (entry != null) {
-                if (compareHashKeysNode.execute(compareByIdentity, key, hashed, entry.getKey(), entry.getHashed())) {
+                if (refEqual.executeReferenceEqual(key, entry.getKey())) {
+                    return new HashLookupResult(hashed, index, previousEntry, entry);
+                }
+
+                previousEntry = entry;
+                entry = entry.getNextInLookup();
+            }
+
+            return new HashLookupResult(hashed, index, previousEntry, null);
+        }
+
+        @Specialization(guards = "!hash.compareByIdentity")
+        protected HashLookupResult lookupByHash(RubyHash hash, Entry[] entries, Object key,
+                                          @Cached HashingNodes.ToHashByHashCode toHashByHashCode,
+                                          @Cached KernelNodes.SameOrEqlNode same) {
+            int hashed = toHashByHashCode.execute(key);
+
+            final int index = getBucketIndex(hashed, entries.length);
+            Entry entry = entries[index];
+
+            Entry previousEntry = null;
+
+            while (entry != null) {
+                if (hashed == entry.getHashed() && same.execute(key, entry.getKey())) {
                     return new HashLookupResult(hashed, index, previousEntry, entry);
                 }
 
