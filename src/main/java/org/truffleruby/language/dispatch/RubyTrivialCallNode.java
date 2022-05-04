@@ -55,6 +55,7 @@ public class RubyTrivialCallNode extends RubyAbstractCallNode implements Assigna
         this.arguments = parameters.getArguments();
 
         this.dispatchConfig = parameters.isIgnoreVisibility() ? PRIVATE : PROTECTED;
+        assert dispatchConfig.missingBehavior == MissingBehavior.CALL_METHOD_MISSING;
     }
 
     public RubyNode[] getArguments() {
