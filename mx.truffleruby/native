@@ -2,3 +2,4 @@ DYNAMIC_IMPORTS=/substratevm,/tools
 COMPONENTS=TruffleRuby,SubstrateVM,suite:tools
 NATIVE_IMAGES=true
 DISABLE_INSTALLABLES=false
+EXTRA_IMAGE_BUILDER_ARGUMENTS=librubyvm.so:-H:-DeleteLocalSymbols rubyvm:-H:-DeleteLocalSymbols
