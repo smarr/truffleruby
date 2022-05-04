@@ -16,8 +16,6 @@ import com.oracle.truffle.api.interop.TruffleObject;
 import com.oracle.truffle.api.nodes.DenyReplace;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.nodes.NodeCost;
-import com.oracle.truffle.api.profiles.BranchProfile;
-import com.oracle.truffle.api.profiles.ConditionProfile;
 import org.truffleruby.core.cast.ToSymbolNode;
 import org.truffleruby.core.exception.ExceptionOperations.ExceptionFormatter;
 import org.truffleruby.core.hash.RubyHash;
@@ -81,22 +79,15 @@ public class DispatchNode extends FrameAndVariablesSendingNode {
     @Child protected DispatchNode callMethodMissing;
     @Child protected ToSymbolNode toSymbol;
 
-    protected final ConditionProfile methodMissing;
-    protected final BranchProfile methodMissingMissing;
-
     protected DispatchNode(
             DispatchConfiguration config,
             MetaClassNode metaclassNode,
             LookupMethodNode methodLookup,
-            CallInternalMethodNode callNode,
-            ConditionProfile methodMissing,
-            BranchProfile methodMissingMissing) {
+            CallInternalMethodNode callNode) {
         this.config = config;
         this.metaclassNode = metaclassNode;
         this.methodLookup = methodLookup;
         this.callNode = callNode;
-        this.methodMissing = methodMissing;
-        this.methodMissingMissing = methodMissingMissing;
     }
 
     protected DispatchNode(DispatchConfiguration config) {
@@ -104,9 +95,7 @@ public class DispatchNode extends FrameAndVariablesSendingNode {
                 config,
                 MetaClassNode.create(),
                 LookupMethodNode.create(),
-                CallInternalMethodNode.create(),
-                ConditionProfile.create(),
-                BranchProfile.create());
+                CallInternalMethodNode.create());
     }
 
     public Object call(Object receiver, String method) {
@@ -287,7 +276,7 @@ public class DispatchNode extends FrameAndVariablesSendingNode {
         final RubyClass metaclass = metaclassNode.execute(receiver);
         final InternalMethod method = methodLookup.execute(frame, metaclass, methodName, config);
 
-        if (methodMissing.profile(method == null || method.isUndefined())) {
+        if (method == null || method.isUndefined()) {
             switch (config.missingBehavior) {
                 case RETURN_MISSING:
                     return MISSING;
@@ -320,7 +309,6 @@ public class DispatchNode extends FrameAndVariablesSendingNode {
                 literalCallNode);
 
         if (result == MISSING) {
-            methodMissingMissing.enter();
             throw new RaiseException(getContext(), coreExceptions().noMethodErrorFromMethodMissing(
                     ExceptionFormatter.NO_METHOD_ERROR,
                     receiver,
@@ -408,9 +396,7 @@ public class DispatchNode extends FrameAndVariablesSendingNode {
                     config,
                     MetaClassNodeGen.getUncached(),
                     LookupMethodNodeGen.getUncached(),
-                    CallInternalMethodNodeGen.getUncached(),
-                    ConditionProfile.getUncached(),
-                    BranchProfile.getUncached());
+                    CallInternalMethodNodeGen.getUncached());
         }
 
         @Override

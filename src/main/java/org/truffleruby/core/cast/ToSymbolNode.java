@@ -84,7 +84,6 @@ public abstract class ToSymbolNode extends RubyBaseNodeWithExecute {
 
     @Specialization(guards = { "!isRubySymbol(object)", "!isString(object)", "isNotRubyString(object)" })
     protected RubySymbol toStr(Object object,
-            @Cached BranchProfile errorProfile,
             @Cached DispatchNode toStr,
             @CachedLibrary(limit = "LIBSTRING_CACHE") RubyStringLibrary libString,
             @Cached ToSymbolNode toSymbolNode) {
@@ -92,7 +91,6 @@ public abstract class ToSymbolNode extends RubyBaseNodeWithExecute {
         try {
             coerced = toStr.call(object, "to_str");
         } catch (RaiseException e) {
-            errorProfile.enter();
             if (e.getException().getLogicalClass() == coreLibrary().noMethodErrorClass) {
                 throw new RaiseException(getContext(), coreExceptions().typeError(
                         Utils.concat(object, " is not a symbol nor a string"),
@@ -105,7 +103,6 @@ public abstract class ToSymbolNode extends RubyBaseNodeWithExecute {
         if (libString.isRubyString(coerced)) {
             return toSymbolNode.execute(coerced);
         } else {
-            errorProfile.enter();
             throw new RaiseException(getContext(), coreExceptions().typeErrorBadCoercion(
                     object,
                     "String",

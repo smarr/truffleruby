@@ -15,7 +15,6 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.EncapsulatingNodeReference;
 import com.oracle.truffle.api.nodes.Node;
 import com.oracle.truffle.api.nodes.NodeUtil;
-import com.oracle.truffle.api.profiles.BranchProfile;
 import org.truffleruby.RubyContext;
 import org.truffleruby.builtins.CoreMethodNodeManager;
 import org.truffleruby.core.inlined.AlwaysInlinedMethodNode;
@@ -93,9 +92,7 @@ public abstract class CallInternalMethodNode extends RubyBaseNode {
             @Cached(value = "method.getCallTarget()") RootCallTarget cachedCallTarget,
             @Cached("method") InternalMethod cachedMethod,
             @Cached("createAlwaysInlinedMethodNode(cachedMethod)") AlwaysInlinedMethodNode alwaysInlinedNode,
-            @Cached(value = "cachedMethod.getSharedMethodInfo().getArity()") Arity cachedArity,
-            @Cached BranchProfile checkArityProfile,
-            @Cached BranchProfile exceptionProfile) {
+            @Cached(value = "cachedMethod.getSharedMethodInfo().getArity()") Arity cachedArity) {
         assert !cachedArity
                 .acceptsKeywords() : "AlwaysInlinedMethodNodes are currently assumed to not use keyword arguments, the arity check depends on this";
         assert RubyArguments.getSelf(rubyArgs) == receiver;
@@ -107,13 +104,11 @@ public abstract class CallInternalMethodNode extends RubyBaseNode {
         try {
             int given = RubyArguments.getPositionalArgumentsCount(rubyArgs, false);
             if (!cachedArity.check(given)) {
-                checkArityProfile.enter();
                 RubyCheckArityRootNode.checkArityError(cachedArity, given, alwaysInlinedNode);
             }
 
             return alwaysInlinedNode.execute(frame, receiver, RubyArguments.repackForCall(rubyArgs), cachedCallTarget);
         } catch (RaiseException e) {
-            exceptionProfile.enter();
             final Node location = e.getLocation();
             if (location != null && location.getRootNode() == alwaysInlinedNode.getRootNode()) {
                 // if the error originates from the inlined node, rethrow it through the CallTarget to get a proper backtrace
@@ -156,9 +151,7 @@ public abstract class CallInternalMethodNode extends RubyBaseNode {
                     method.getCallTarget(),
                     method,
                     getUncachedAlwaysInlinedMethodNode(method),
-                    method.getSharedMethodInfo().getArity(),
-                    BranchProfile.getUncached(),
-                    BranchProfile.getUncached());
+                    method.getSharedMethodInfo().getArity());
         } finally {
             if (cachedToUncached) {
                 encapsulating.set(prev);

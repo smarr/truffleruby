@@ -62,15 +62,7 @@ public abstract class LookupMethodNode extends RubyBaseNode {
     @Specialization(replaces = "lookupMethodCached")
     protected InternalMethod lookupMethodUncached(
             Frame frame, RubyClass metaClass, String name, DispatchConfiguration config,
-            @Cached MetaClassNode metaClassNode,
-            @Cached ConditionProfile noCallerMethodProfile,
-            @Cached ConditionProfile noPrependedModulesProfile,
-            @Cached ConditionProfile onMetaClassProfile,
-            @Cached ConditionProfile hasRefinementsProfile,
-            @Cached ConditionProfile notFoundProfile,
-            @Cached ConditionProfile publicProfile,
-            @Cached ConditionProfile privateProfile,
-            @Cached ConditionProfile isVisibleProfile) {
+            @Cached MetaClassNode metaClassNode) {
         CompilerAsserts.partialEvaluationConstant(config); // the DispatchConfiguration is always a constant in the caller
 
         // Actual lookup
@@ -80,15 +72,15 @@ public abstract class LookupMethodNode extends RubyBaseNode {
         // Lookup first in the metaclass as we are likely to find the method there
         final ModuleFields fields = metaClass.fields;
         InternalMethod topMethod;
-        if (noPrependedModulesProfile.profile(!fields.hasPrependedModules()) &&
-                onMetaClassProfile.profile((topMethod = fields.getMethod(name)) != null) &&
-                !hasRefinementsProfile.profile(declarationContext != null && declarationContext.hasRefinements())) {
+        if (!fields.hasPrependedModules() &&
+                (topMethod = fields.getMethod(name)) != null &&
+                !(declarationContext != null && declarationContext.hasRefinements())) {
             method = topMethod;
         } else {
             method = ModuleOperations.lookupMethodUncached(metaClass, name, declarationContext);
         }
 
-        if (notFoundProfile.profile(method == null || method.isUndefined())) {
+        if (method == null || method.isUndefined()) {
             return null;
         }
 
@@ -96,7 +88,7 @@ public abstract class LookupMethodNode extends RubyBaseNode {
 
         if (!config.ignoreVisibility) {
             final Visibility visibility = method.getVisibility();
-            if (publicProfile.profile(visibility == Visibility.PUBLIC)) {
+            if (visibility == Visibility.PUBLIC) {
                 return method;
             }
 
@@ -104,7 +96,7 @@ public abstract class LookupMethodNode extends RubyBaseNode {
                 return null;
             }
 
-            if (privateProfile.profile(visibility == Visibility.PRIVATE)) {
+            if (visibility == Visibility.PRIVATE) {
                 // A private method may only be called with an implicit receiver.
                 return null;
             }
@@ -113,13 +105,13 @@ public abstract class LookupMethodNode extends RubyBaseNode {
             final RubyClass callerClass;
             final InternalMethod callerMethod = RubyArguments.tryGetMethod(frame);
 
-            if (noCallerMethodProfile.profile(callerMethod == null)) {
+            if (callerMethod == null) {
                 callerClass = coreLibrary().objectClass;
             } else {
                 callerClass = metaClassNode.execute(RubyArguments.getSelf(frame));
             }
 
-            if (!isVisibleProfile.profile(method.isProtectedMethodVisibleTo(callerClass))) {
+            if (!method.isProtectedMethodVisibleTo(callerClass)) {
                 return null;
             }
         }
