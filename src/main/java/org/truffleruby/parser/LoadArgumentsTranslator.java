@@ -141,6 +141,12 @@ public class LoadArgumentsTranslator extends Translator {
                 sequence.add(args[i].accept(this));
                 index++;
             }
+
+            index = 0;
+            for (int i = 0; i < preCount; i++) {
+                sequence.add(args[i].accept(this));
+                index++;
+            }
         }
 
         // Do this before handling optional arguments as one might get
@@ -159,9 +165,16 @@ public class LoadArgumentsTranslator extends Translator {
                 sequence.add(args[optArgIndex + i].accept(this));
                 ++index;
             }
+
+            index = argsNode.getPreCount();
+            for (int i = 0; i < optArgCount; i++) {
+                sequence.add(args[optArgIndex + i].accept(this));
+                ++index;
+            }
         }
 
         if (argsNode.getRestArgNode() != null) {
+            sequence.add(argsNode.getRestArgNode().accept(this));
             sequence.add(argsNode.getRestArgNode().accept(this));
         }
 
@@ -174,6 +187,12 @@ public class LoadArgumentsTranslator extends Translator {
         if (postCount > 0) {
             state = State.POST;
             ParseNode[] children = argsNode.getPost().children();
+            index = argsNode.getPreCount();
+            for (int i = 0; i < children.length; i++) {
+                notNilSmallerSequence.add(children[i].accept(this));
+                index++;
+            }
+
             index = argsNode.getPreCount();
             for (int i = 0; i < children.length; i++) {
                 notNilSmallerSequence.add(children[i].accept(this));
@@ -195,6 +214,12 @@ public class LoadArgumentsTranslator extends Translator {
                 noRestSequence.add(children[i].accept(this));
                 index++;
             }
+
+            index = argsNode.getPreCount() + argsNode.getOptionalArgsCount();
+            for (int i = 0; i < children.length; i++) {
+                noRestSequence.add(children[i].accept(this));
+                index++;
+            }
         }
 
         final RubyNode noRest = sequence(sourceSection, noRestSequence);
@@ -208,6 +233,12 @@ public class LoadArgumentsTranslator extends Translator {
             index = -1;
 
             int postIndex = argsNode.getPostIndex();
+            for (int i = postCount - 1; i >= 0; i--) {
+                notNilAtLeastAsLargeSequence.add(args[postIndex + i].accept(this));
+                index--;
+            }
+
+            index = -1;
             for (int i = postCount - 1; i >= 0; i--) {
                 notNilAtLeastAsLargeSequence.add(args[postIndex + i].accept(this));
                 index--;
